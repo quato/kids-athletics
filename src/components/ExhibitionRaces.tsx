@@ -1,0 +1,51 @@
+const races = [
+  { age: "2022 – 2023", event: "Біг на 20 м" },
+  { age: "2020 – 2021", event: "Біг на 50 м з перешкодами" },
+  { age: "2018 – 2019", event: "3×20 м човниковий біг + 40 м біг з перешкодами" },
+  { age: "2016 – 2017", event: "3×20 м човниковий біг + 50 м біг з перешкодами" },
+  { age: "2014 – 2015", event: "3×20 м човниковий біг + 60 м біг з перешкодами" },
+];
+
+const ExhibitionRaces = () => {
+  return (
+    <section className="section-padding bg-muted">
+      <div className="container mx-auto max-w-4xl">
+        <h2 className="section-heading">Програма змагань</h2>
+        <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+          Програма змагань охоплює дві секції:{" "}
+          <a href="#team" className="text-secondary font-semibold hover:underline">командні</a> та{" "}
+          <strong>виставкові (особисті) виступи</strong>.
+        </p>
+
+        <h3 className="text-xl font-heading font-bold mb-4 text-foreground">Виставкові забіги</h3>
+        <div className="rounded-2xl overflow-hidden shadow-lg mb-6">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-secondary text-secondary-foreground">
+                <th className="px-4 py-3 text-left font-bold">Вікова група</th>
+                <th className="px-4 py-3 text-left font-bold">Дистанція / Подія</th>
+              </tr>
+            </thead>
+            <tbody>
+              {races.map((r, i) => (
+                <tr
+                  key={i}
+                  className={`${i % 2 === 0 ? "bg-card" : "bg-muted"} border-b border-border`}
+                >
+                  <td className="px-4 py-3 font-semibold text-foreground">{r.age}</td>
+                  <td className="px-4 py-3 text-foreground">{r.event}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-muted-foreground text-sm">
+          <strong>Виставкові забіги</strong> організовуються з метою створення спортивної події, відкритої і доступної для всіх дітей відповідної вікової категорії (2014–2023 року народження).
+        </p>
+      </div>
+    </section>
+  );
+};
+
+export default ExhibitionRaces;
