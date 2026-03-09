@@ -39,15 +39,15 @@ const CountdownTimer = () => {
   ];
 
   return (
-    <div className="flex justify-center gap-3 md:gap-6">
+    <div className="flex justify-center gap-3 md:gap-5">
       {units.map((unit) => (
         <div key={unit.label} className="flex flex-col items-center">
-          <div className="bg-card rounded-xl shadow-lg w-16 h-16 md:w-24 md:h-24 flex items-center justify-center animate-count-pulse">
-            <span className="text-2xl md:text-4xl font-heading font-black text-primary">
+          <div className="bg-card rounded-lg shadow-md w-14 h-14 md:w-18 md:h-18 flex items-center justify-center animate-count-pulse">
+            <span className="text-xl md:text-3xl font-heading font-black text-primary">
               {String(unit.value).padStart(2, "0")}
             </span>
           </div>
-          <span className="text-xs md:text-sm mt-2 text-muted-foreground font-medium">
+          <span className="text-sm md:text-base mt-2 text-primary-foreground/80 font-semibold drop-shadow">
             {unit.label}
           </span>
         </div>
