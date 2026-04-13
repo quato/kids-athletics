@@ -21,7 +21,7 @@ const HeroSection = () => {
           Фестиваль дитячої легкої атлетики!
         </p>
         <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 drop-shadow">
-          📅 25 травня 2026 р. &nbsp;·&nbsp; 📍 Дніпро
+          📅 24 травня 2026 р. &nbsp;·&nbsp; 📍 Дніпро
         </p>
 
         <div className="mb-10">

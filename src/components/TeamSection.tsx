@@ -20,15 +20,23 @@ const TeamSection = () => {
             ))}
           </ul>
 
-          <div className="bg-destructive/10 border-l-4 border-destructive rounded-xl p-4 mb-6">
+          <div className="bg-success/10 border-l-4 border-success rounded-xl p-4 mb-6">
             <p className="text-foreground font-semibold text-sm">
-              Реєстрацію на командні забіги <span className="text-destructive">завершено</span> — ліміт у 10 команд вже досягнуто.
+              Реєстрація на командні забіги <span className="text-success">відкрита</span>!
             </p>
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSeLh2vo4y5COI5ssKKRTvOLjRoI_hpoKDnf8u1U9VhWrUxNbw/viewform?usp=header"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
+            >
+              Зареєструвати команду
+            </a>
           </div>
 
           <div className="text-center">
             <a
-              href="https://docs.google.com/spreadsheets/d/1-83iPuOw-HsmQIt8h9SD_yuGbxinnG8GLfL-0HyoEJQ/edit?usp=drivesdk"
+              href="https://docs.google.com/spreadsheets/d/1tkSU3Vx6aTYudozzGhJtx_ALBgD97r2URsjnAirldlY/edit?usp=sharing"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"

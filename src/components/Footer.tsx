@@ -32,7 +32,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-border pt-6 text-center">
-          <p className="text-xs text-muted-foreground"><p className="text-xs text-muted-foreground">© 2026 Kids Athletics FEST. Всі права захищені.</p>. Всі права захищені.</p>
+          <p className="text-xs text-muted-foreground">© 2026 Kids Athletics FEST. Всі права захищені.</p>
         </div>
       </div>
     </footer>

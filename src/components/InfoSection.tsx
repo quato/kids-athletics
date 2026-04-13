@@ -35,7 +35,7 @@ const InfoSection = () => {
 
             <div className="pt-4 text-center">
               <a
-                href="https://kids-athletics.com.ua/reglament_Kids_athletics_FEST.pdf"
+                href="/reglament_kids_athletics_fest_05-2026.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
