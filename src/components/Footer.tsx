@@ -1,4 +1,4 @@
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, Instagram } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -9,9 +9,18 @@ const Footer = () => {
             <h3 className="font-heading font-bold text-xl text-foreground mb-3">
               Kids Athletics FEST
             </h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-sm mb-4">
               Підтримуй легку атлетику! Приєднуйся до нас у справі підтримки та підйому юних спортсменів.
             </p>
+            <a 
+              href="https://www.instagram.com/kids_athletics_dnipro/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm font-medium"
+            >
+              <Instagram className="w-5 h-5 text-primary" />
+              @kids_athletics_dnipro
+            </a>
           </div>
           <div className="md:text-right">
             <h4 className="font-heading font-bold text-lg text-foreground mb-3">Контакти</h4>
