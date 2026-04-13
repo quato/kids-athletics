@@ -1,4 +1,4 @@
-import heroBackground from "@/assets/hero-background.jpg";
+import heroBackground from "@/assets/hero-background.png";
 import CountdownTimer from "./CountdownTimer";
 
 const HeroSection = () => {
