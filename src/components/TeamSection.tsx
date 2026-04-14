@@ -25,7 +25,7 @@ const TeamSection = () => {
               Реєстрація на командні забіги <span className="text-success">відкрита</span>!
             </p>
             <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSeLh2vo4y5COI5ssKKRTvOLjRoI_hpoKDnf8u1U9VhWrUxNbw/viewform?usp=header"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
