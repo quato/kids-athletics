@@ -1,11 +1,12 @@
 import { PenSquare, CreditCard, Footprints } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const steps = [
   {
     icon: PenSquare,
     title: "Крок 1",
     description: "Заповніть реєстраційну форму",
-    action: { label: "Зареєструватися", href: "https://docs.google.com/forms/d/e/1FAIpQLSeLh2vo4y5COI5ssKKRTvOLjRoI_hpoKDnf8u1U9VhWrUxNbw/viewform?usp=header" },
+    action: { label: "Зареєструватися", to: "/registration" },
   },
   {
     icon: CreditCard,
@@ -40,14 +41,12 @@ const HowToParticipate = () => {
                 <span className="text-2xl font-heading font-black text-secondary">{step.price}</span>
               )}
               {step.action && (
-                <a 
-                  href={step.action.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to={step.action.to}
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
                 >
                   {step.action.label}
-                </a>
+                </Link>
               )}
             </div>
           ))}

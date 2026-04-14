@@ -1,6 +1,18 @@
-# Welcome to your Lovable project
+# Kids Athletics FEST — Website
 
-## Project info
+Registration and payment platform for Kids Athletics FEST (kids-athletics.com.ua).
+
+Built with Vite + React + Tailwind CSS + shadcn/ui, hosted on Vercel with Neon Postgres and Monobank payment integration.
+
+## Documentation
+
+- [Monobank Integration](docs/monobank-integration.md) — endpoints, StatementItem format, matching algorithm
+- [Deployment Guide](docs/deployment.md) — Neon + Vercel setup, ENV, logs, schema runbook
+- [Organizers Guide](docs/organizers-guide.md) — how to add events, manage registrations, payment instructions
+
+---
+
+## Project info (Lovable)
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 

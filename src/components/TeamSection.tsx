@@ -1,4 +1,10 @@
+const REGISTRATION_OPEN_DATE = new Date("2026-04-19T00:00:00");
+const TEAM_REGISTRATION_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header";
+
 const TeamSection = () => {
+  const isRegistrationOpen = new Date() >= REGISTRATION_OPEN_DATE;
+
   return (
     <section id="team" className="section-padding bg-muted">
       <div className="container mx-auto max-w-4xl">
@@ -20,18 +26,24 @@ const TeamSection = () => {
             ))}
           </ul>
 
-          <div className="bg-success/10 border-l-4 border-success rounded-xl p-4 mb-6">
+          <div className={`border-l-4 rounded-xl p-4 mb-6 ${isRegistrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
             <p className="text-foreground font-semibold text-sm">
-              Реєстрація на командні забіги <span className="text-success">відкрита</span>!
+              {isRegistrationOpen ? (
+                <>Реєстрація на командні забіги <span className="text-success">відкрита</span>!</>
+              ) : (
+                <>Реєстрація на командні забіги відкриється <span className="text-primary">19 квітня</span>.</>
+              )}
             </p>
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
-            >
-              Зареєструвати команду
-            </a>
+            {isRegistrationOpen && (
+              <a
+                href={TEAM_REGISTRATION_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
+              >
+                Зареєструвати команду
+              </a>
+            )}
           </div>
 
           <div className="text-center">
