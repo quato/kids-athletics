@@ -70,6 +70,76 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ORDER BY o.created_at DESC
     `);
 
+    if (req.query.format === "csv") {
+      const headers = [
+        "ID Замовлення",
+        "Дата створення",
+        "Статус",
+        "Дата оплати",
+        "Батько/Мати",
+        "Телефон",
+        "Email",
+        "Код платежу",
+        "Сума (грн)",
+        "ID Дитини",
+        "Ім'я дитини",
+        "Рік народження",
+        "Стартовий номер",
+        "Присутність",
+        "Подія"
+      ];
+
+      const escapeCsv = (val: any) => {
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      const rows: string[][] = [];
+      for (const row of result.rows) {
+        const orderData = [
+          row.id,
+          row.created_at ? new Date(row.created_at).toLocaleString("uk-UA") : "",
+          row.status === "paid" ? "Оплачено" : "Очікує",
+          row.paid_at ? new Date(row.paid_at).toLocaleString("uk-UA") : "",
+          row.parent_name,
+          row.phone,
+          row.email,
+          row.payment_code,
+          row.expected_amount
+        ];
+
+        if (!row.children || row.children.length === 0) {
+          rows.push([...orderData, "", "", "", "", "", ""]);
+        } else {
+          for (const child of row.children) {
+            rows.push([
+              ...orderData,
+              child.id,
+              child.childName || "",
+              child.birthYear === 0 ? "Інвалід" : (child.birthYear || ""),
+              child.startNumber || "",
+              child.isPresent === true ? "Так" : child.isPresent === false ? "Ні" : "",
+              child.eventName || ""
+            ]);
+          }
+        }
+      }
+
+      const csvContent = [
+        headers.map(escapeCsv).join(","),
+        ...rows.map(r => r.map(escapeCsv).join(","))
+      ].join("\n");
+
+      const bom = "\uFEFF";
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="registrations.csv"');
+      return res.status(200).send(bom + csvContent);
+    }
+
     const orders = result.rows.map((row) => ({
       id: row.id,
       status: row.status,

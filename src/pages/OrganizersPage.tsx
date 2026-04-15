@@ -762,7 +762,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
 
   const handleExportCsv = async () => {
     try {
-      const res = await fetch("/api/admin/export-csv", {
+      const res = await fetch("/api/admin/orders?format=csv", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Не вдалося експортувати дані");

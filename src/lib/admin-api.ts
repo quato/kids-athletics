@@ -94,7 +94,7 @@ export async function updateOrder(
     email?: string;
   },
 ): Promise<void> {
-  const res = await fetch("/api/admin/update-order", {
+  const res = await fetch("/api/admin/update", {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ orderId, ...fields }),
@@ -104,7 +104,7 @@ export async function updateOrder(
 }
 
 export async function deleteOrder(token: string, orderId: number): Promise<void> {
-  const res = await fetch("/api/admin/update-order", {
+  const res = await fetch("/api/admin/update", {
     method: "DELETE",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ orderId }),
@@ -133,7 +133,7 @@ export async function updateChild(
     birthYear?: number;
   },
 ): Promise<void> {
-  const res = await fetch("/api/admin/update-child", {
+  const res = await fetch("/api/admin/update", {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ childId, ...fields }),
