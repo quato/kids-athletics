@@ -20,15 +20,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const [countsResult, startersResult, totalResult] = await Promise.all([
-      // counts per age group (present + paid)
+      // counts per age group (present + start_number set)
       pool.query<{ age_group: string; count: string }>(`
         SELECT ${AGE_GROUP_EXPR} AS age_group, COUNT(*) AS count
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
-        WHERE o.status = 'paid' AND r.is_present = true
+        WHERE r.is_present = true AND r.start_number IS NOT NULL
         GROUP BY age_group
       `),
-      // children with a start number (paid + present + start_number set)
+      // children with a start number (present + start_number set)
       pool.query<{ age_group: string; child_name: string; start_number: number }>(`
         SELECT
           ${AGE_GROUP_EXPR} AS age_group,
@@ -36,8 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           r.start_number
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
-        WHERE o.status = 'paid'
-          AND r.is_present = true
+        WHERE r.is_present = true
           AND r.start_number IS NOT NULL
         ORDER BY r.start_number ASC
       `),
