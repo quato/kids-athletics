@@ -26,6 +26,7 @@ interface OrderRow {
   children: Array<{
     id: number;
     childName: string;
+    birthYear: number;
     eventName: string;
     startNumber: number | null;
     isPresent: boolean | null;
@@ -98,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return str;
       };
 
-      const rows: string[][] = [];
+      const rows: any[][] = [];
       for (const row of result.rows) {
         const orderData = [
           row.id,
