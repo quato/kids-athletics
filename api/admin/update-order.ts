@@ -12,12 +12,46 @@ function authenticate(req: VercelRequest): boolean {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "PATCH") {
-    return methodNotAllowed(res, ["PATCH"]);
+  if (req.method !== "PATCH" && req.method !== "DELETE") {
+    return methodNotAllowed(res, ["PATCH", "DELETE"]);
   }
 
   if (!authenticate(req)) {
     return json(res, 401, { error: "Unauthorized" });
+  }
+
+  // ── DELETE: remove an order and its registrations ──────────────────────────
+  if (req.method === "DELETE") {
+    const body = req.body as { orderId?: number };
+    if (!body.orderId || typeof body.orderId !== "number") {
+      return badRequest(res, "Required field: orderId (number)");
+    }
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      // Refuse to delete paid orders for safety
+      const check = await client.query<{ status: string }>(
+        `SELECT status FROM orders WHERE id = $1 LIMIT 1`,
+        [body.orderId],
+      );
+      if (check.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return json(res, 404, { error: "Order not found" });
+      }
+      if (check.rows[0].status === "paid") {
+        await client.query("ROLLBACK");
+        return json(res, 409, { error: "Cannot delete a paid order" });
+      }
+      await client.query(`DELETE FROM registrations WHERE order_id = $1`, [body.orderId]);
+      await client.query(`DELETE FROM orders WHERE id = $1`, [body.orderId]);
+      await client.query("COMMIT");
+      return json(res, 200, { ok: true });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      return serverError(res, err);
+    } finally {
+      client.release();
+    }
   }
 
   const body = req.body as {

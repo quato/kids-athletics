@@ -103,6 +103,17 @@ export async function updateOrder(
   if (!res.ok) throw new Error("Не вдалося оновити замовлення");
 }
 
+export async function deleteOrder(token: string, orderId: number): Promise<void> {
+  const res = await fetch("/api/admin/update-order", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ orderId }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (res.status === 409) throw new Error("Не можна видалити оплачене замовлення");
+  if (!res.ok) throw new Error("Не вдалося видалити запис");
+}
+
 /** @deprecated use updateOrder */
 export async function updateOrderStatus(
   token: string,

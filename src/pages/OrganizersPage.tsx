@@ -1,11 +1,11 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, Save } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, Save, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder } from "@/lib/admin-api";
 import type { Order, AdminEvent, OrderChild } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
@@ -266,6 +266,56 @@ function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
   );
 }
 
+// ── Confirm delete button ────────────────────────────────────────────────────
+
+function ConfirmDeleteButton({ onConfirm, disabled }: { onConfirm: () => Promise<void>; disabled?: boolean }) {
+  const [stage, setStage] = useState<"idle" | "confirm" | "deleting">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  if (stage === "idle") {
+    return (
+      <button
+        disabled={disabled}
+        onClick={(e) => { e.stopPropagation(); setStage("confirm"); }}
+        className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+        title="Видалити запис"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  if (stage === "confirm") {
+    return (
+      <span className="inline-flex items-center gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+        <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
+        <span className="text-xs font-semibold text-destructive whitespace-nowrap">Видалити?</span>
+        <button
+          onClick={async (e) => {
+            e.stopPropagation();
+            setStage("deleting");
+            setError(null);
+            try { await onConfirm(); }
+            catch (err) { setError(err instanceof Error ? err.message : "Помилка"); setStage("idle"); }
+          }}
+          className="px-2 py-0.5 rounded bg-destructive text-destructive-foreground text-xs font-bold hover:opacity-90 transition"
+        >
+          Так
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setStage("idle"); }}
+          className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs font-bold hover:opacity-90 transition"
+        >
+          Ні
+        </button>
+        {error && <span className="text-xs text-destructive">{error}</span>}
+      </span>
+    );
+  }
+
+  return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
+}
+
 // ── Order row ───────────────────────────────────────────────────────────────
 
 function OrderRow({ order, token }: { order: Order; token: string }) {
@@ -352,6 +402,16 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
         </td>
         <td className="px-3 py-3 text-muted-foreground">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </td>
+        <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+          {order.status !== "paid" && (
+            <ConfirmDeleteButton
+              onConfirm={async () => {
+                await deleteOrder(token, order.id);
+                queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+              }}
+            />
+          )}
         </td>
       </tr>
       {expanded && (
@@ -769,6 +829,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                   <th className="px-3 py-3">Статус</th>
                   <th className="px-3 py-3 hidden lg:table-cell">Код платежу</th>
                   <th className="px-3 py-3" />
+                  <th className="px-2 py-3" />
                 </tr>
               </thead>
               <tbody>
