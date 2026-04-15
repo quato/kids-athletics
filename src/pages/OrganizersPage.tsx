@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders } from "@/lib/admin-api";
-import type { Order } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration } from "@/lib/admin-api";
+import type { Order, AdminEvent } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -182,6 +182,227 @@ function OrderRow({ order }: { order: Order }) {
   );
 }
 
+// ── Manual registration modal ───────────────────────────────────────────────
+
+interface ChildRow {
+  childName: string;
+  birthYear: string;
+  eventId: number;
+}
+
+function ManualRegistrationModal({
+  token,
+  events,
+  onClose,
+  onSuccess,
+}: {
+  token: string;
+  events: AdminEvent[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [parentName, setParentName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"paid" | "pending">("paid");
+  const [note, setNote] = useState("");
+  const [children, setChildren] = useState<ChildRow[]>([
+    { childName: "", birthYear: "", eventId: events[0]?.id ?? 0 },
+  ]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const addChild = () =>
+    setChildren((prev) => [...prev, { childName: "", birthYear: "", eventId: events[0]?.id ?? 0 }]);
+
+  const removeChild = (i: number) =>
+    setChildren((prev) => prev.filter((_, idx) => idx !== i));
+
+  const updateChild = (i: number, field: keyof ChildRow, value: string | number) =>
+    setChildren((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await manualRegistration(token, {
+        parentName,
+        phone,
+        email,
+        status,
+        note: note.trim() || undefined,
+        children: children.map((c) => ({
+          childName: c.childName,
+          birthYear: parseInt(c.birthYear, 10),
+          eventId: c.eventId,
+        })),
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Помилка");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
+          <h2 className="font-heading font-bold text-lg text-foreground">Ручна реєстрація</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                Ім'я батька/матері *
+              </label>
+              <Input
+                value={parentName}
+                onChange={(e) => setParentName(e.target.value)}
+                placeholder="Іваненко Олена"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                  Телефон *
+                </label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+380501234567"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Діти ({children.length})
+            </p>
+            {children.map((child, i) => (
+              <div key={i} className="rounded-xl border border-border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-semibold">Дитина {i + 1}</span>
+                  {children.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeChild(i)}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    value={child.childName}
+                    onChange={(e) => updateChild(i, "childName", e.target.value)}
+                    placeholder="Ім'я дитини"
+                    required
+                  />
+                  <Input
+                    value={child.birthYear}
+                    onChange={(e) => updateChild(i, "birthYear", e.target.value)}
+                    placeholder="Рік народж. *"
+                    type="number"
+                    min={2000}
+                    max={2025}
+                    required
+                  />
+                </div>
+                <select
+                  value={child.eventId}
+                  onChange={(e) => updateChild(i, "eventId", parseInt(e.target.value, 10))}
+                  className="w-full border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  required
+                >
+                  {events.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.name} — {ev.feeAmount} грн
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addChild}
+              className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary border border-dashed border-border rounded-xl py-2 transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Додати ще дитину
+            </button>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Статус оплати</p>
+            <div className="flex gap-3">
+              {(["paid", "pending"] as const).map((s) => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="status"
+                    value={s}
+                    checked={status === s}
+                    onChange={() => setStatus(s)}
+                    className="accent-primary"
+                  />
+                  <span className="text-sm font-semibold">
+                    {s === "paid" ? "✅ Оплачено" : "⏳ Очікує оплату"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+              Примітка (необов'язково)
+            </label>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Наприклад: оплата готівкою на місці"
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+              Скасувати
+            </Button>
+            <Button type="submit" className="flex-1" disabled={loading || !parentName || !phone || children.some((c) => !c.birthYear)}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Зберегти
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Stats card ──────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon: Icon, className }: {
@@ -209,10 +430,18 @@ type Filter = "all" | "pending" | "paid";
 
 function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [showModal, setShowModal] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: orders, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin-orders", token],
     queryFn: () => fetchOrders(token),
+    retry: false,
+  });
+
+  const { data: events = [] } = useQuery({
+    queryKey: ["admin-events", token],
+    queryFn: () => fetchAdminEvents(token),
     retry: false,
   });
 
@@ -232,16 +461,35 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
     return true;
   }) ?? [];
 
+  const handleRegistrationSuccess = () => {
+    setShowModal(false);
+    queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {showModal && events.length > 0 && (
+        <ManualRegistrationModal
+          token={token}
+          events={events}
+          onClose={() => setShowModal(false)}
+          onSuccess={handleRegistrationSuccess}
+        />
+      )}
       <Navbar />
       <main className="flex-1 container mx-auto max-w-6xl px-4 pt-28 pb-16">
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-heading font-black text-2xl text-foreground">Реєстрації</h1>
-          <Button variant="outline" size="sm" onClick={onLogout} className="gap-2">
-            <LogOut className="w-4 h-4" />
-            Вийти
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => setShowModal(true)} className="gap-2">
+              <PlusCircle className="w-4 h-4" />
+              Додати вручну
+            </Button>
+            <Button variant="outline" size="sm" onClick={onLogout} className="gap-2">
+              <LogOut className="w-4 h-4" />
+              Вийти
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}

@@ -80,6 +80,8 @@ export async function sendPaymentConfirmationEmail(opts: {
 
 // ─── HTML templates ──────────────────────────────────────────────────────────
 
+const CARD_NUMBER = "4874 0700 5666 0853";
+
 const baseStyle = `font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;background:#ffffff;`;
 const btnStyle = `display:inline-block;padding:12px 24px;background:#e85d24;color:#ffffff !important;text-decoration:none;border-radius:8px;font-weight:bold;font-size:15px;`;
 const codeBoxStyle = `background:#f5f5f5;border:1px solid #e0e0e0;border-radius:6px;padding:12px 16px;font-family:monospace;font-size:22px;font-weight:bold;letter-spacing:2px;color:#e85d24;display:inline-block;margin:8px 0;`;
@@ -130,14 +132,21 @@ function registrationHtml(opts: {
     </table>
 
     <div style="background:#fff8f5;border:1px solid #ffd5c0;border-radius:8px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0 0 8px;font-weight:bold;font-size:15px;">Як оплатити?</p>
+      <p style="margin:0 0 12px;font-weight:bold;font-size:15px;">Як оплатити?</p>
+
+      <p style="margin:0 0 4px;font-size:13px;color:#666;">Картка організатора:</p>
+      <p style="margin:0 0 16px;font-family:monospace;font-size:24px;font-weight:900;letter-spacing:3px;color:#1a1a1a;">${CARD_NUMBER}</p>
+
+      <div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:6px;padding:14px;margin-bottom:16px;">
+        <p style="margin:0 0 6px;font-weight:bold;font-size:14px;color:#dc2626;">⚠️ Обов'язково вкажіть код платежу у призначенні:</p>
+        <span style="${codeBoxStyle}">${opts.paymentCode}</span>
+        <p style="margin:6px 0 0;font-size:12px;color:#888;">Без коду платіж неможливо ідентифікувати — реєстрація залишиться непідтвердженою.</p>
+      </div>
+
       <ol style="margin:0;padding-left:20px;line-height:1.8;color:#444;font-size:14px;">
         <li>Відкрийте Monobank, Privatbank або будь-який інтернет-банкінг.</li>
-        <li>Виконайте переказ на картку організатора (реквізити — на сайті події).</li>
-        <li>
-          У призначенні платежу вкажіть <strong>код платежу</strong>:<br/>
-          <span style="${codeBoxStyle}">${opts.paymentCode}</span>
-        </li>
+        <li>Виконайте переказ на картку <strong style="font-family:monospace;">${CARD_NUMBER}</strong></li>
+        <li>У призначенні платежу вкажіть код: <strong style="font-family:monospace;color:#e85d24;">${opts.paymentCode}</strong></li>
         <li>Сума: <strong>${opts.totalAmount} грн</strong></li>
       </ol>
     </div>

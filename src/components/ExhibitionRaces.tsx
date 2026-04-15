@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-
-const REGISTRATION_OPEN_DATE = new Date("2026-04-19T00:00:00");
+import { isRegistrationOpen } from "@/lib/registration-open";
 
 const races = [
   { age: "Інваліди", event: "Біг по прямій 60 м" },
@@ -12,7 +11,7 @@ const races = [
 ];
 
 const ExhibitionRaces = () => {
-  const isRegistrationOpen = new Date() >= REGISTRATION_OPEN_DATE;
+  const registrationOpen = isRegistrationOpen();
 
   return (
     <section className="section-padding bg-muted">
@@ -47,15 +46,15 @@ const ExhibitionRaces = () => {
           </table>
         </div>
 
-        <div className={`border-l-4 rounded-xl p-4 mb-6 ${isRegistrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
-          <p className="text-foreground font-semibold text-sm">
-            {isRegistrationOpen ? (
-              <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
-            ) : (
-              <>Реєстрація на виставкові забіги відкриється <span className="text-primary">19 квітня</span>.</>
-            )}
-          </p>
-          {isRegistrationOpen && (
+          <div className={`border-l-4 rounded-xl p-4 mb-6 ${registrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
+            <p className="text-foreground font-semibold text-sm">
+              {registrationOpen ? (
+                <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
+              ) : (
+                <>Реєстрація на виставкові забіги відкриється <span className="text-primary">19 квітня</span>.</>
+              )}
+            </p>
+            {registrationOpen && (
             <Link
               to="/registration"
               className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"

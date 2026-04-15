@@ -1,9 +1,10 @@
-const REGISTRATION_OPEN_DATE = new Date("2026-04-19T00:00:00");
+import { isRegistrationOpen } from "@/lib/registration-open";
+
 const TEAM_REGISTRATION_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header";
 
 const TeamSection = () => {
-  const isRegistrationOpen = new Date() >= REGISTRATION_OPEN_DATE;
+  const registrationOpen = isRegistrationOpen();
 
   return (
     <section id="team" className="section-padding bg-muted">
@@ -26,15 +27,15 @@ const TeamSection = () => {
             ))}
           </ul>
 
-          <div className={`border-l-4 rounded-xl p-4 mb-6 ${isRegistrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
+          <div className={`border-l-4 rounded-xl p-4 mb-6 ${registrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
             <p className="text-foreground font-semibold text-sm">
-              {isRegistrationOpen ? (
+              {registrationOpen ? (
                 <>Реєстрація на командні забіги <span className="text-success">відкрита</span>!</>
               ) : (
                 <>Реєстрація на командні забіги відкриється <span className="text-primary">19 квітня</span>.</>
               )}
             </p>
-            {isRegistrationOpen && (
+            {registrationOpen && (
               <a
                 href={TEAM_REGISTRATION_URL}
                 target="_blank"

@@ -23,7 +23,8 @@ import PaymentStatusCard from "@/components/registration/PaymentStatusCard";
 import { fetchEvents, createRegistration } from "@/lib/registration-api";
 import type { RegistrationResponse } from "@/types/registration";
 
-const REGISTRATION_OPEN_DATE = new Date("2026-04-19T00:00:00");
+import { isRegistrationOpen } from "@/lib/registration-open";
+
 const currentYear = new Date().getFullYear();
 
 const childSchema = z.object({
@@ -48,7 +49,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const Registration = () => {
-  const isRegistrationOpen = new Date() >= REGISTRATION_OPEN_DATE;
+  const registrationOpen = isRegistrationOpen();
   const [order, setOrder] = useState<RegistrationResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -120,7 +121,7 @@ const Registration = () => {
           Kids Athletics FEST — один платіж на всіх дітей.
         </p>
 
-        {!isRegistrationOpen ? (
+        {!registrationOpen ? (
           <div className="bg-card rounded-2xl shadow-md p-8 text-center space-y-4">
             <p className="text-4xl">🗓️</p>
             <h2 className="font-heading font-bold text-xl text-foreground">

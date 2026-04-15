@@ -17,17 +17,39 @@ interface Props {
 
 const POLL_INTERVAL_MS = 10_000;
 
+const CARD_NUMBER = "4874 0700 5666 0853";
+
 const PaymentInstructions = ({ paymentCode, amount }: { paymentCode: string; amount: number }) => (
-  <div className="bg-accent/20 border border-accent rounded-xl p-5 space-y-3">
+  <div className="bg-accent/20 border border-accent rounded-xl p-5 space-y-4">
     <p className="font-heading font-bold text-foreground text-lg">Як оплатити?</p>
+
+    <div className="space-y-1">
+      <p className="text-sm text-muted-foreground">Картка організатора:</p>
+      <p className="font-mono font-black text-2xl tracking-widest text-foreground select-all">
+        {CARD_NUMBER}
+      </p>
+    </div>
+
+    <div className="bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3 space-y-1">
+      <p className="text-sm font-bold text-destructive">
+        ⚠️ Обов'язково вкажіть код платежу у призначенні:
+      </p>
+      <p className="font-mono font-black text-2xl tracking-widest text-primary select-all">
+        {paymentCode}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Без коду платіж неможливо ідентифікувати — реєстрація залишиться непідтвердженою.
+      </p>
+    </div>
+
     <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
       <li>Відкрийте Monobank, Privatbank або будь-який інтернет-банкінг.</li>
       <li>
-        Виконайте переказ на картку організатора (реквізити надсилаються на email після
-        реєстрації).
+        Виконайте переказ на картку{" "}
+        <span className="font-mono font-semibold text-foreground">{CARD_NUMBER}</span>
       </li>
       <li>
-        У призначенні платежу вкажіть ваш код:{" "}
+        У призначенні платежу вкажіть код:{" "}
         <span className="font-mono font-bold text-primary">{paymentCode}</span>
       </li>
       <li>
