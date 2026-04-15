@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, notFound, serverError } from "../_lib/http.js";
+import { sendTelegramMessage } from "../_lib/telegram.js";
+import { findDuplicates } from "../_lib/duplicates.js";
 
 function authenticate(req: VercelRequest): boolean {
   const expectedPassword = process.env.ORGANIZER_PASSWORD;
@@ -41,13 +43,13 @@ function validateBody(body: unknown): body is Body {
     !Array.isArray(b.children) || b.children.length === 0
   ) return false;
   return b.children.every(
-    (c) =>
+    (c: any) =>
       c &&
       typeof c === "object" &&
-      typeof (c as Record<string, unknown>).childName === "string" &&
-      ((c as Record<string, unknown>).childName as string).trim().length >= 2 &&
-      typeof (c as Record<string, unknown>).eventId === "number" &&
-      (c as Record<string, unknown>).eventId > 0,
+      typeof c.childName === "string" &&
+      c.childName.trim().length >= 2 &&
+      typeof c.eventId === "number" &&
+      c.eventId > 0,
   );
 }
 
@@ -120,6 +122,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await client.query("COMMIT");
+
+    // Telegram notification
+    try {
+      const childNames = children.map((c) => c.childName);
+      const duplicates = await findDuplicates(parentName, phone, email, childNames, orderId);
+
+      let msg = `🆕 <b>Нова реєстрація (вручну)!</b>\n`;
+      msg += `Замовлення: #${orderId}\n`;
+      msg += `Батьки: ${parentName.trim()}\n`;
+      msg += `Телефон: ${phone.trim()}\n`;
+      msg += `Email: ${email.trim().toLowerCase()}\n`;
+      msg += `Сума: ${totalAmount} грн\n`;
+      msg += `Статус: ${status === "paid" ? "✅ Оплачено" : "⏳ Очікує оплату"}\n`;
+
+      if (duplicates.length > 0) {
+        msg += `\n⚠️ <b>Увага, можливий дублікат!</b>\n`;
+        msg += `Збіги знайдено у замовленнях:\n`;
+        duplicates.forEach((d) => {
+          msg += `- #${d.id} (${d.parentName}, ${d.phone})\n`;
+        });
+      }
+
+      await sendTelegramMessage(msg);
+    } catch (err) {
+      console.error("[manual-registration] telegram notification failed:", err);
+    }
 
     return json(res, 201, { orderId, paymentCode, totalAmount, status, children: childResults });
   } catch (err) {

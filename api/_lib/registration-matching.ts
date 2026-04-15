@@ -9,6 +9,7 @@ export interface ChildInfo {
 export interface PaidOrderData {
   orderId: number;
   email: string;
+  phone: string;
   parentName: string;
   paymentCode: string;
   amount: number;
@@ -90,6 +91,7 @@ export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
     const updateResult = await client.query<{
       id: number;
       email: string;
+      phone: string;
       parent_name: string;
       payment_code: string;
       expected_amount: string;
@@ -101,7 +103,7 @@ export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
          mono_transaction_id = $2,
          raw_statement = $3
        WHERE id = $4
-       RETURNING id, email, parent_name, payment_code, expected_amount, paid_at`,
+       RETURNING id, email, phone, parent_name, payment_code, expected_amount, paid_at`,
       [paidAt, item.id, JSON.stringify(item), orderId],
     );
 
@@ -128,6 +130,7 @@ export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
       status: "ok",
       orderId: row.id,
       email: row.email,
+      phone: row.phone,
       parentName: row.parent_name,
       paymentCode: row.payment_code,
       amount: parseFloat(row.expected_amount),

@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "./_lib/db.js";
 import { json, methodNotAllowed, badRequest, notFound, serverError } from "./_lib/http.js";
 import { sendRegistrationEmail } from "./_lib/email.js";
+import { sendTelegramMessage } from "./_lib/telegram.js";
+import { findDuplicates } from "./_lib/duplicates.js";
 
 interface ChildInput {
   childName: string;
@@ -131,6 +133,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await client.query("COMMIT");
+
+    // Telegram notification
+    try {
+      const childNames = children.map((c) => c.childName);
+      const duplicates = await findDuplicates(parentName, phone, email, childNames, orderId);
+
+      let msg = `🆕 <b>Нова реєстрація!</b>\n`;
+      msg += `Замовлення: #${orderId}\n`;
+      msg += `Батьки: ${parentName.trim()}\n`;
+      msg += `Телефон: ${phone.trim()}\n`;
+      msg += `Email: ${email.trim().toLowerCase()}\n`;
+      msg += `Сума: ${totalAmount} грн\n`;
+
+      if (duplicates.length > 0) {
+        msg += `\n⚠️ <b>Увага, можливий дублікат!</b>\n`;
+        msg += `Збіги знайдено у замовленнях:\n`;
+        duplicates.forEach((d) => {
+          msg += `- #${d.id} (${d.parentName}, ${d.phone})\n`;
+        });
+      }
+
+      await sendTelegramMessage(msg);
+    } catch (err) {
+      console.error("[registration] telegram notification failed:", err);
+    }
 
     // Send registration confirmation email before responding so the serverless
     // function does not terminate before the HTTP request to Resend completes.

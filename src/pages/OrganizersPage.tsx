@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, Save, AlertTriangle } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, Save, AlertTriangle, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -760,6 +760,28 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
     queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const res = await fetch("/api/admin/export-csv", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Не вдалося експортувати дані");
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "registrations.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Помилка експорту CSV");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {showModal && events.length > 0 && (
@@ -774,7 +796,11 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       <main className="flex-1 container mx-auto max-w-6xl px-4 pt-28 pb-16">
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-heading font-black text-2xl text-foreground">Реєстрації</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
+              <Download className="w-4 h-4" />
+              Експорт CSV
+            </Button>
             <Button size="sm" onClick={() => setShowModal(true)} className="gap-2">
               <PlusCircle className="w-4 h-4" />
               Додати вручну

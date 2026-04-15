@@ -3,6 +3,7 @@ import pool from "./_lib/db.js";
 import { json, serverError } from "./_lib/http.js";
 import { matchAndPay } from "./_lib/registration-matching.js";
 import { sendPaymentConfirmationEmail } from "./_lib/email.js";
+import { sendTelegramMessage } from "./_lib/telegram.js";
 import type { MonobankWebhookPayload } from "./_lib/monobank.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -81,6 +82,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       } catch (err) {
         console.error("[monobank-webhook] payment email failed:", err);
+      }
+
+      try {
+        let msg = `✅ <b>Оплату підтверджено (Monobank)!</b>\n`;
+        msg += `Замовлення: #${result.orderId}\n`;
+        msg += `Сума: ${result.amount} грн\n`;
+        msg += `Батьки: ${result.parentName}\n`;
+        msg += `Телефон: ${result.phone}\n`;
+        msg += `Email: ${result.email}\n`;
+        await sendTelegramMessage(msg);
+      } catch (err) {
+        console.error("[monobank-webhook] telegram notification failed:", err);
       }
     }
 

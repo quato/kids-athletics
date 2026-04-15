@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, serverError } from "../_lib/http.js";
+import { sendTelegramMessage } from "../_lib/telegram.js";
 
 function authenticate(req: VercelRequest): boolean {
   const expectedPassword = process.env.ORGANIZER_PASSWORD;
@@ -110,8 +111,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await client.query("BEGIN");
 
-    const result = await client.query(
-      `UPDATE orders SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING id`,
+    const result = await client.query<{
+      id: number;
+      expected_amount: string;
+      parent_name: string;
+      phone: string;
+      email: string;
+    }>(
+      `UPDATE orders SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING id, expected_amount, parent_name, phone, email`,
       values,
     );
 
@@ -128,6 +135,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await client.query("COMMIT");
+
+    if (body.status === "paid") {
+      try {
+        const row = result.rows[0];
+        let msg = `✅ <b>Оплату підтверджено (вручну)!</b>\n`;
+        msg += `Замовлення: #${row.id}\n`;
+        msg += `Сума: ${parseFloat(row.expected_amount)} грн\n`;
+        msg += `Батьки: ${row.parent_name}\n`;
+        msg += `Телефон: ${row.phone}\n`;
+        msg += `Email: ${row.email}\n`;
+        await sendTelegramMessage(msg);
+      } catch (err) {
+        console.error("[update-order] telegram notification failed:", err);
+      }
+    }
+
     return json(res, 200, { ok: true });
   } catch (err) {
     await client.query("ROLLBACK");
