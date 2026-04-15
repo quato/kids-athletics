@@ -361,25 +361,23 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
             className="font-semibold text-sm"
           />
         </td>
-        <td className="px-3 py-3 text-sm">
-          <a
-            href={`tel:${order.phone}`}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-primary hover:underline"
-          >
-            <Phone className="w-3 h-3" />
-            {order.phone}
-          </a>
-        </td>
-        <td className="px-3 py-3 text-sm hidden md:table-cell">
-          <a
-            href={`mailto:${order.email}`}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-primary hover:underline"
-          >
-            <Mail className="w-3 h-3" />
-            {order.email}
-          </a>
+        <td className="px-3 py-3 text-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-col gap-0.5">
+            <a
+              href={`tel:${order.phone}`}
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              <Phone className="w-3 h-3 shrink-0" />
+              {order.phone}
+            </a>
+            <a
+              href={`mailto:${order.email}`}
+              className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+            >
+              <Mail className="w-3 h-3 shrink-0" />
+              {order.email}
+            </a>
+          </div>
         </td>
         <td className="px-3 py-3 text-center text-sm text-muted-foreground">{order.children.length}</td>
         <td className="px-3 py-3 text-sm font-semibold text-secondary whitespace-nowrap">
@@ -838,8 +836,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                 <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                   <th className="px-3 py-3">Дата</th>
                   <th className="px-3 py-3 whitespace-nowrap">Батько/Мати</th>
-                  <th className="px-3 py-3">Телефон</th>
-                  <th className="px-3 py-3 hidden md:table-cell">Email</th>
+                  <th className="px-3 py-3">Контакти</th>
                   <th className="px-3 py-3 text-center">Діти</th>
                   <th className="px-3 py-3">Сума</th>
                   <th className="px-3 py-3">Статус</th>
