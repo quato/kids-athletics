@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import pool from "./lib/db.js";
-import { json, methodNotAllowed, serverError } from "./lib/http.js";
+import pool from "./_lib/db.js";
+import { json, methodNotAllowed, serverError } from "./_lib/http.js";
 
 interface EventRow {
   id: number;

@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import pool from "./lib/db.js";
-import { json, serverError } from "./lib/http.js";
-import { matchAndPay } from "./lib/registration-matching.js";
-import { sendPaymentConfirmationEmail } from "./lib/email.js";
-import type { MonobankWebhookPayload } from "./lib/monobank.js";
+import pool from "./_lib/db.js";
+import { json, serverError } from "./_lib/http.js";
+import { matchAndPay } from "./_lib/registration-matching.js";
+import { sendPaymentConfirmationEmail } from "./_lib/email.js";
+import type { MonobankWebhookPayload } from "./_lib/monobank.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Monobank sends a GET request to verify the webhook URL

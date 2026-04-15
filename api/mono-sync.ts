@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import pool from "./lib/db.js";
-import { json, methodNotAllowed, serverError } from "./lib/http.js";
-import { matchAndPay } from "./lib/registration-matching.js";
-import { sendPaymentConfirmationEmail } from "./lib/email.js";
-import type { StatementItem } from "./lib/monobank.js";
+import pool from "./_lib/db.js";
+import { json, methodNotAllowed, serverError } from "./_lib/http.js";
+import { matchAndPay } from "./_lib/registration-matching.js";
+import { sendPaymentConfirmationEmail } from "./_lib/email.js";
+import type { StatementItem } from "./_lib/monobank.js";
 
 const MONOBANK_API = "https://api.monobank.ua";
 const SYNC_WINDOW_HOURS = 24;

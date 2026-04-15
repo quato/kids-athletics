@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import pool from "./lib/db.js";
-import { json, methodNotAllowed, badRequest, notFound, serverError } from "./lib/http.js";
-import { sendRegistrationEmail } from "./lib/email.js";
+import pool from "./_lib/db.js";
+import { json, methodNotAllowed, badRequest, notFound, serverError } from "./_lib/http.js";
+import { sendRegistrationEmail } from "./_lib/email.js";
 
 interface ChildInput {
   childName: string;
