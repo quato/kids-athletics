@@ -22,6 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       FROM registrations r
       JOIN orders o ON o.id = r.order_id
       WHERE o.status = 'paid'
+        AND r.is_present = true
       GROUP BY age_group
     `);
 

@@ -1,6 +1,9 @@
 export interface OrderChild {
+  id: number;
   childName: string;
   eventName: string;
+  startNumber: number | null;
+  isPresent: boolean | null;
 }
 
 export interface Order {
@@ -78,6 +81,34 @@ export async function manualRegistration(
     const data = await res.json().catch(() => ({}));
     throw new Error((data as { error?: string }).error ?? "Помилка при збереженні");
   }
+}
+
+export async function updateOrderStatus(
+  token: string,
+  orderId: number,
+  status: "paid" | "pending",
+): Promise<void> {
+  const res = await fetch("/api/admin/update-order", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ orderId, status }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося оновити статус");
+}
+
+export async function updateChild(
+  token: string,
+  childId: number,
+  fields: { startNumber?: number | null; isPresent?: boolean | null },
+): Promise<void> {
+  const res = await fetch("/api/admin/update-child", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ childId, ...fields }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося оновити дані дитини");
 }
 
 export async function fetchOrders(token: string): Promise<Order[]> {

@@ -105,6 +105,12 @@ export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
       [paidAt, item.id, JSON.stringify(item), orderId],
     );
 
+    // Mark all children as present by default when payment is confirmed
+    await client.query(
+      `UPDATE registrations SET is_present = true WHERE order_id = $1 AND is_present IS NULL`,
+      [orderId],
+    );
+
     // Fetch all children with event names for the email
     const childrenResult = await client.query<{ child_name: string; event_name: string }>(
       `SELECT r.child_name, e.name AS event_name

@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration } from "@/lib/admin-api";
-import type { Order, AdminEvent } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrderStatus, updateChild } from "@/lib/admin-api";
+import type { Order, AdminEvent, OrderChild } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -100,10 +100,99 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── Child editable row ───────────────────────────────────────────────────────
+
+function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
+  const queryClient = useQueryClient();
+  const [startNumber, setStartNumber] = useState(
+    child.startNumber != null ? String(child.startNumber) : "",
+  );
+  const [isPresent, setIsPresent] = useState<boolean | null>(child.isPresent ?? null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persistChild = async (fields: { startNumber?: number | null; isPresent?: boolean | null }) => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await updateChild(token, child.id, fields);
+      queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      // silently ignore — row will revert on next refresh
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStartNumberChange = (val: string) => {
+    setStartNumber(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const num = val.trim() === "" ? null : parseInt(val, 10);
+      if (val.trim() === "" || (!isNaN(num!) && num! > 0)) {
+        persistChild({ startNumber: num });
+      }
+    }, 800);
+  };
+
+  const handlePresenceToggle = () => {
+    const next = isPresent === true ? false : isPresent === false ? null : true;
+    setIsPresent(next);
+    persistChild({ isPresent: next });
+  };
+
+  const presenceLabel =
+    isPresent === true ? "✅ Присутній" : isPresent === false ? "❌ Відсутній" : "— невідомо";
+  const presenceClass =
+    isPresent === true
+      ? "bg-success/15 text-success"
+      : isPresent === false
+      ? "bg-destructive/10 text-destructive"
+      : "bg-muted text-muted-foreground";
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 py-2 border-b border-border/50 last:border-0">
+      <span className="font-semibold text-foreground text-sm min-w-[140px]">{child.childName}</span>
+      <span className="text-xs text-muted-foreground">{child.eventName}</span>
+
+      <div className="flex items-center gap-1 ml-auto flex-wrap gap-y-1">
+        {/* Start number */}
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground whitespace-nowrap"># старт:</span>
+          <input
+            type="number"
+            min={1}
+            value={startNumber}
+            onChange={(e) => handleStartNumberChange(e.target.value)}
+            placeholder="—"
+            className="w-16 border border-input bg-background rounded-md px-2 py-1 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        {/* Presence toggle */}
+        <button
+          onClick={handlePresenceToggle}
+          className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors ${presenceClass}`}
+        >
+          {presenceLabel}
+        </button>
+
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+        {saved && !saving && <span className="text-xs text-success">Збережено</span>}
+      </div>
+    </div>
+  );
+}
+
 // ── Order row ───────────────────────────────────────────────────────────────
 
-function OrderRow({ order }: { order: Order }) {
+function OrderRow({ order, token }: { order: Order; token: string }) {
+  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(false);
 
   const date = new Date(order.createdAt).toLocaleString("uk-UA", {
     day: "2-digit",
@@ -112,6 +201,20 @@ function OrderRow({ order }: { order: Order }) {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const handleStatusToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = order.status === "paid" ? "pending" : "paid";
+    setStatusSaving(true);
+    try {
+      await updateOrderStatus(token, order.id, next);
+      queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+    } catch {
+      // ignore
+    } finally {
+      setStatusSaving(false);
+    }
+  };
 
   return (
     <>
@@ -145,7 +248,18 @@ function OrderRow({ order }: { order: Order }) {
         <td className="px-3 py-3 text-sm font-semibold text-secondary whitespace-nowrap">
           {order.expectedAmount} грн
         </td>
-        <td className="px-3 py-3"><StatusBadge status={order.status} /></td>
+        <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={handleStatusToggle}
+            disabled={statusSaving}
+            className="flex items-center gap-1"
+            title="Натисніть щоб змінити статус"
+          >
+            {statusSaving
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <StatusBadge status={order.status} />}
+          </button>
+        </td>
         <td className="px-3 py-3 font-mono text-xs text-muted-foreground hidden lg:table-cell">
           {order.paymentCode}
         </td>
@@ -157,12 +271,11 @@ function OrderRow({ order }: { order: Order }) {
         <tr className="bg-muted/30 border-b border-border">
           <td colSpan={9} className="px-4 py-3">
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Діти</p>
-              {order.children.map((c, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-foreground">{c.childName}</span>
-                  <span className="text-muted-foreground">— {c.eventName}</span>
-                </div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Діти — стартовий номер та присутність
+              </p>
+              {order.children.map((c) => (
+                <ChildEditRow key={c.id} child={c} token={token} />
               ))}
               {order.children.length === 0 && (
                 <p className="text-sm text-muted-foreground">Немає даних про дітей</p>
@@ -560,7 +673,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                   </tr>
                 )}
                 {filtered.map((order) => (
-                  <OrderRow key={order.id} order={order} />
+                  <OrderRow key={order.id} order={order} token={token} />
                 ))}
               </tbody>
             </table>

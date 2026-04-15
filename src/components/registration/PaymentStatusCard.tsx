@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Clock } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { fetchOrderStatus } from "@/lib/registration-api";
 
 interface ChildSummary {
@@ -18,6 +19,20 @@ interface Props {
 const POLL_INTERVAL_MS = 10_000;
 
 const CARD_NUMBER = "4874 0700 5666 0853";
+
+function buildQrValue(paymentCode: string, amount: number): string {
+  const monoKey = import.meta.env.VITE_MONO_SEND_KEY as string | undefined;
+  if (monoKey) {
+    // Monobank deep link: opens payment screen in browser or app with
+    // amount (in kopecks) and payment code pre-filled.
+    const amountKopecks = Math.round(amount * 100);
+    return `https://send.monobank.ua/${monoKey}?a=${amountKopecks}&t=${encodeURIComponent(paymentCode)}`;
+  }
+  // Fallback: plain text with all payment details.
+  return `Картка: ${CARD_NUMBER}\nКод платежу: ${paymentCode}\nСума: ${amount} грн`;
+}
+
+const hasMonoLink = !!import.meta.env.VITE_MONO_SEND_KEY;
 
 const PaymentInstructions = ({ paymentCode, amount }: { paymentCode: string; amount: number }) => (
   <div className="bg-accent/20 border border-accent rounded-xl p-5 space-y-4">
@@ -40,6 +55,32 @@ const PaymentInstructions = ({ paymentCode, amount }: { paymentCode: string; amo
       <p className="text-xs text-muted-foreground">
         Без коду платіж неможливо ідентифікувати — реєстрація залишиться непідтвердженою.
       </p>
+    </div>
+
+    {/* QR code + pay button */}
+    <div className="flex flex-col items-center gap-3 py-2">
+      <QRCodeSVG
+        value={buildQrValue(paymentCode, amount)}
+        size={180}
+        level="M"
+        includeMargin
+        className="rounded-xl border border-border bg-white p-1"
+      />
+      <p className="text-xs text-muted-foreground text-center">
+        {hasMonoLink
+          ? "Скануйте QR-код — відкриється Monobank із заповленою сумою та кодом"
+          : "Скануйте QR-код, щоб побачити реквізити для оплати"}
+      </p>
+      {hasMonoLink && (
+        <a
+          href={buildQrValue(paymentCode, amount)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm shadow hover:shadow-md transition-all hover:scale-105"
+        >
+          💳 Оплатити через Monobank
+        </a>
+      )}
     </div>
 
     <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">

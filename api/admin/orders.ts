@@ -23,7 +23,13 @@ interface OrderRow {
   email: string;
   payment_code: string;
   expected_amount: string;
-  children: Array<{ childName: string; eventName: string }> | null;
+  children: Array<{
+    id: number;
+    childName: string;
+    eventName: string;
+    startNumber: number | null;
+    isPresent: boolean | null;
+  }> | null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -49,8 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         o.expected_amount,
         json_agg(
           json_build_object(
-            'childName', r.child_name,
-            'eventName', e.name
+            'id',          r.id,
+            'childName',   r.child_name,
+            'eventName',   e.name,
+            'startNumber', r.start_number,
+            'isPresent',   r.is_present
           ) ORDER BY r.id
         ) FILTER (WHERE r.id IS NOT NULL) AS children
       FROM orders o
