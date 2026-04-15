@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const [countsResult, startersResult] = await Promise.all([
+    const [countsResult, startersResult, totalResult] = await Promise.all([
       // counts per age group (present + paid)
       pool.query<{ age_group: string; count: string }>(`
         SELECT ${AGE_GROUP_EXPR} AS age_group, COUNT(*) AS count
@@ -41,6 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           AND r.start_number IS NOT NULL
         ORDER BY r.start_number ASC
       `),
+      // total children across all orders (all statuses)
+      pool.query<{ count: string }>(`SELECT COUNT(*) AS count FROM registrations`),
     ]);
 
     const counts: Record<string, number> = {};
@@ -58,8 +60,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    const totalRegistered = parseInt(totalResult.rows[0].count, 10);
+
     res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
-    return json(res, 200, { counts, starters });
+    return json(res, 200, { counts, starters, totalRegistered });
   } catch (err) {
     return serverError(res, err);
   }

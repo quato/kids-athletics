@@ -352,7 +352,7 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
         onClick={() => setExpanded((v) => !v)}
       >
         <td className="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap">{date}</td>
-        <td className="px-3 py-3 font-semibold text-foreground text-sm" onClick={(e) => e.stopPropagation()}>
+        <td className="px-3 py-3 font-semibold text-foreground text-sm whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
           <InlineEditField
             value={order.parentName}
             onSave={(v) => updateOrder(token, order.id, { parentName: v }).then(() =>
@@ -468,6 +468,7 @@ interface ChildRow {
   childName: string;
   birthYear: string;
   eventId: number;
+  isDisabled: boolean;
 }
 
 function ManualRegistrationModal({
@@ -487,18 +488,18 @@ function ManualRegistrationModal({
   const [status, setStatus] = useState<"paid" | "pending">("paid");
   const [note, setNote] = useState("");
   const [children, setChildren] = useState<ChildRow[]>([
-    { childName: "", birthYear: "", eventId: events[0]?.id ?? 0 },
+    { childName: "", birthYear: "", eventId: events[0]?.id ?? 0, isDisabled: false },
   ]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const addChild = () =>
-    setChildren((prev) => [...prev, { childName: "", birthYear: "", eventId: events[0]?.id ?? 0 }]);
+    setChildren((prev) => [...prev, { childName: "", birthYear: "", eventId: events[0]?.id ?? 0, isDisabled: false }]);
 
   const removeChild = (i: number) =>
     setChildren((prev) => prev.filter((_, idx) => idx !== i));
 
-  const updateChild = (i: number, field: keyof ChildRow, value: string | number) =>
+  const updateChild = (i: number, field: keyof ChildRow, value: string | number | boolean) =>
     setChildren((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -514,7 +515,7 @@ function ManualRegistrationModal({
         note: note.trim() || undefined,
         children: children.map((c) => ({
           childName: c.childName,
-          birthYear: parseInt(c.birthYear, 10),
+          birthYear: c.isDisabled ? 0 : parseInt(c.birthYear, 10),
           eventId: c.eventId,
         })),
       });
@@ -600,16 +601,31 @@ function ManualRegistrationModal({
                     placeholder="Ім'я дитини"
                     required
                   />
-                  <Input
-                    value={child.birthYear}
-                    onChange={(e) => updateChild(i, "birthYear", e.target.value)}
-                    placeholder="Рік народж. *"
-                    type="number"
-                    min={2000}
-                    max={2025}
-                    required
-                  />
+                  {child.isDisabled ? (
+                    <div className="flex items-center px-3 py-2 rounded-md border border-input bg-muted text-sm text-muted-foreground">
+                      Інвалід / особливі потреби
+                    </div>
+                  ) : (
+                    <Input
+                      value={child.birthYear}
+                      onChange={(e) => updateChild(i, "birthYear", e.target.value)}
+                      placeholder="Рік народж. *"
+                      type="number"
+                      min={2014}
+                      max={2023}
+                      required
+                    />
+                  )}
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                  <input
+                    type="checkbox"
+                    checked={child.isDisabled}
+                    onChange={(e) => updateChild(i, "isDisabled", e.target.checked)}
+                    className="accent-primary w-4 h-4"
+                  />
+                  <span className="text-sm text-muted-foreground">Інвалід / з особливими потребами</span>
+                </label>
                 <select
                   value={child.eventId}
                   onChange={(e) => updateChild(i, "eventId", parseInt(e.target.value, 10))}
@@ -672,7 +688,7 @@ function ManualRegistrationModal({
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
               Скасувати
             </Button>
-            <Button type="submit" className="flex-1" disabled={loading || !parentName || !phone || children.some((c) => !c.birthYear)}>
+            <Button type="submit" className="flex-1" disabled={loading || !parentName || !phone || children.some((c) => !c.isDisabled && !c.birthYear)}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Зберегти
             </Button>
@@ -821,7 +837,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                   <th className="px-3 py-3">Дата</th>
-                  <th className="px-3 py-3">Батько/Мати</th>
+                  <th className="px-3 py-3 whitespace-nowrap">Батько/Мати</th>
                   <th className="px-3 py-3">Телефон</th>
                   <th className="px-3 py-3 hidden md:table-cell">Email</th>
                   <th className="px-3 py-3 text-center">Діти</th>

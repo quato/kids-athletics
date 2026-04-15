@@ -23,6 +23,7 @@ interface Starter {
 interface StatsData {
   counts: Record<string, number>;
   starters: Record<string, Starter[]>;
+  totalRegistered: number;
 }
 
 async function fetchStats(): Promise<StatsData> {
@@ -114,11 +115,18 @@ const RegistrationStatsPage = () => {
               Оновлюється автоматично кожну хвилину
             </p>
           </div>
-          {!isLoading && !isError && (
-            <div className="flex items-center gap-2 bg-primary/10 rounded-xl px-4 py-2">
-              <Users className="w-5 h-5 text-primary" />
-              <span className="font-bold text-primary text-xl">{total}</span>
-              <span className="text-sm text-muted-foreground">учасників</span>
+          {!isLoading && !isError && data && (
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 bg-muted rounded-xl px-4 py-2">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <span className="font-bold text-foreground text-xl">{data.totalRegistered}</span>
+                <span className="text-sm text-muted-foreground">у заявках</span>
+              </div>
+              <div className="flex items-center gap-2 bg-primary/10 rounded-xl px-4 py-2">
+                <Users className="w-5 h-5 text-primary" />
+                <span className="font-bold text-primary text-xl">{total}</span>
+                <span className="text-sm text-muted-foreground">підтверджено</span>
+              </div>
             </div>
           )}
         </div>

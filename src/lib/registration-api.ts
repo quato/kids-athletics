@@ -14,9 +14,13 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export async function fetchEvents(): Promise<Event[]> {
-  const data = await apiFetch<{ events: Event[] }>("/api/events");
-  return data.events;
+export interface EventsResponse {
+  events: Event[];
+  registrationOpen: boolean;
+}
+
+export async function fetchEvents(): Promise<EventsResponse> {
+  return apiFetch<EventsResponse>("/api/events");
 }
 
 export async function createRegistration(

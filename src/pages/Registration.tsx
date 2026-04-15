@@ -21,6 +21,7 @@ import Footer from "@/components/Footer";
 import PaymentStatusCard from "@/components/registration/PaymentStatusCard";
 
 import { fetchEvents, createRegistration } from "@/lib/registration-api";
+import type { EventsResponse } from "@/lib/registration-api";
 import type { RegistrationResponse } from "@/types/registration";
 
 import { isRegistrationOpen } from "@/lib/registration-open";
@@ -53,10 +54,13 @@ const Registration = () => {
   const [order, setOrder] = useState<RegistrationResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { data: eventsData, isLoading: eventsLoading, isError: eventsError } = useQuery({
+  const { data: eventsResponse, isLoading: eventsLoading, isError: eventsError } = useQuery<EventsResponse>({
     queryKey: ["events"],
     queryFn: fetchEvents,
   });
+
+  const eventsData = eventsResponse?.events;
+  const capacityReached = eventsResponse ? !eventsResponse.registrationOpen : false;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -147,6 +151,24 @@ const Registration = () => {
             <p className="text-muted-foreground">
               Реєстрація на виставкові забіги відкриється{" "}
               <span className="text-primary font-semibold">19 квітня</span>.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Повернутися на головну
+            </Link>
+          </div>
+        ) : capacityReached ? (
+          <div className="bg-card rounded-2xl shadow-md p-8 text-center space-y-4">
+            <p className="text-4xl">🏁</p>
+            <h2 className="font-heading font-bold text-xl text-foreground">
+              Реєстрацію закрито
+            </h2>
+            <p className="text-muted-foreground">
+              Досягнуто максимальну кількість заявок (140).
+              Слідкуйте за оновленнями в наших соцмережах.
             </p>
             <Link
               to="/"

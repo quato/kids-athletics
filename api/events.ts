@@ -15,15 +15,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return methodNotAllowed(res, ["GET"]);
   }
 
-  try {
-    const result = await pool.query<EventRow>(
-      `SELECT id, name, date, fee_amount, registration_deadline
-       FROM events
-       WHERE registration_deadline > now()
-       ORDER BY date ASC`,
-    );
+  const ORDER_LIMIT = 140;
 
-    const events = result.rows.map((row) => ({
+  try {
+    const [eventsResult, countResult] = await Promise.all([
+      pool.query<EventRow>(
+        `SELECT id, name, date, fee_amount, registration_deadline
+         FROM events
+         WHERE registration_deadline > now()
+         ORDER BY date ASC`,
+      ),
+      pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM orders"),
+    ]);
+
+    const events = eventsResult.rows.map((row) => ({
       id: row.id,
       name: row.name,
       date: row.date,
@@ -31,7 +36,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       registrationDeadline: row.registration_deadline,
     }));
 
-    json(res, 200, { events });
+    const registrationOpen = parseInt(countResult.rows[0].count, 10) < ORDER_LIMIT;
+
+    json(res, 200, { events, registrationOpen });
   } catch (err) {
     serverError(res, err);
   }
