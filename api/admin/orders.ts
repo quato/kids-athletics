@@ -57,6 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           json_build_object(
             'id',          r.id,
             'childName',   r.child_name,
+            'birthYear',   r.birth_year,
             'eventName',   e.name,
             'startNumber', r.start_number,
             'isPresent',   r.is_present

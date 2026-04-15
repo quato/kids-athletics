@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrderStatus, updateChild } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild } from "@/lib/admin-api";
 import type { Order, AdminEvent, OrderChild } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
@@ -100,6 +100,69 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── Inline editable text field ────────────────────────────────────────────────
+
+function InlineEditField({
+  value,
+  onSave,
+  placeholder,
+  type = "text",
+  className = "",
+}: {
+  value: string;
+  onSave: (v: string) => Promise<void>;
+  placeholder?: string;
+  type?: string;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  const commit = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === value) { setEditing(false); setDraft(value); return; }
+    setSaving(true);
+    try {
+      await onSave(trimmed);
+      setEditing(false);
+    } catch {
+      setDraft(value);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => { setDraft(value); setEditing(true); }}
+        className={`group flex items-center gap-1 hover:text-primary transition-colors ${className}`}
+        title="Натисніть щоб редагувати"
+      >
+        <span>{value || placeholder}</span>
+        <span className="opacity-0 group-hover:opacity-60 text-xs">✏️</span>
+      </button>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <input
+        autoFocus
+        type={type}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setEditing(false); setDraft(value); } }}
+        onBlur={commit}
+        className={`border border-primary bg-background rounded-md px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${className}`}
+      />
+      {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+    </span>
+  );
+}
+
 // ── Child editable row ───────────────────────────────────────────────────────
 
 function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
@@ -112,7 +175,12 @@ function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
   const [saved, setSaved] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const persistChild = async (fields: { startNumber?: number | null; isPresent?: boolean | null }) => {
+  const persistChild = async (fields: {
+    startNumber?: number | null;
+    isPresent?: boolean | null;
+    childName?: string;
+    birthYear?: number;
+  }) => {
     setSaving(true);
     setSaved(false);
     try {
@@ -154,8 +222,19 @@ function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
       : "bg-muted text-muted-foreground";
 
   return (
-    <div className="flex flex-wrap items-center gap-3 py-2 border-b border-border/50 last:border-0">
-      <span className="font-semibold text-foreground text-sm min-w-[140px]">{child.childName}</span>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-border/50 last:border-0">
+      <InlineEditField
+        value={child.childName}
+        onSave={(v) => persistChild({ childName: v })}
+        className="font-semibold text-foreground text-sm min-w-[140px]"
+      />
+      <InlineEditField
+        value={String(child.birthYear || "")}
+        onSave={(v) => persistChild({ birthYear: parseInt(v, 10) })}
+        type="number"
+        placeholder="рік"
+        className="w-20 text-xs text-muted-foreground"
+      />
       <span className="text-xs text-muted-foreground">{child.eventName}</span>
 
       <div className="flex items-center gap-1 ml-auto flex-wrap gap-y-1">
@@ -223,7 +302,15 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
         onClick={() => setExpanded((v) => !v)}
       >
         <td className="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap">{date}</td>
-        <td className="px-3 py-3 font-semibold text-foreground text-sm">{order.parentName}</td>
+        <td className="px-3 py-3 font-semibold text-foreground text-sm" onClick={(e) => e.stopPropagation()}>
+          <InlineEditField
+            value={order.parentName}
+            onSave={(v) => updateOrder(token, order.id, { parentName: v }).then(() =>
+              queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })
+            )}
+            className="font-semibold text-sm"
+          />
+        </td>
         <td className="px-3 py-3 text-sm">
           <a
             href={`tel:${order.phone}`}
@@ -280,8 +367,28 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
               {order.children.length === 0 && (
                 <p className="text-sm text-muted-foreground">Немає даних про дітей</p>
               )}
-              <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-4 text-xs text-muted-foreground">
-                <span>Email: <a href={`mailto:${order.email}`} className="text-primary hover:underline">{order.email}</a></span>
+              <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground items-center">
+                <span className="flex items-center gap-1">
+                  Тел:
+                  <InlineEditField
+                    value={order.phone}
+                    onSave={(v) => updateOrder(token, order.id, { phone: v }).then(() =>
+                      queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })
+                    )}
+                    className="text-xs"
+                  />
+                </span>
+                <span className="flex items-center gap-1">
+                  Email:
+                  <InlineEditField
+                    value={order.email}
+                    onSave={(v) => updateOrder(token, order.id, { email: v }).then(() =>
+                      queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })
+                    )}
+                    type="email"
+                    className="text-xs"
+                  />
+                </span>
                 <span>Код платежу: <span className="font-mono font-bold text-foreground">{order.paymentCode}</span></span>
                 {order.paidAt && (
                   <span>Оплачено: {new Date(order.paidAt).toLocaleString("uk-UA")}</span>

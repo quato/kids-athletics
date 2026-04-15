@@ -1,6 +1,7 @@
 export interface OrderChild {
   id: number;
   childName: string;
+  birthYear: number;
   eventName: string;
   startNumber: number | null;
   isPresent: boolean | null;
@@ -83,24 +84,43 @@ export async function manualRegistration(
   }
 }
 
+export async function updateOrder(
+  token: string,
+  orderId: number,
+  fields: {
+    status?: "paid" | "pending";
+    parentName?: string;
+    phone?: string;
+    email?: string;
+  },
+): Promise<void> {
+  const res = await fetch("/api/admin/update-order", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ orderId, ...fields }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося оновити замовлення");
+}
+
+/** @deprecated use updateOrder */
 export async function updateOrderStatus(
   token: string,
   orderId: number,
   status: "paid" | "pending",
 ): Promise<void> {
-  const res = await fetch("/api/admin/update-order", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ orderId, status }),
-  });
-  if (res.status === 401) throw new Error("UNAUTHORIZED");
-  if (!res.ok) throw new Error("Не вдалося оновити статус");
+  return updateOrder(token, orderId, { status });
 }
 
 export async function updateChild(
   token: string,
   childId: number,
-  fields: { startNumber?: number | null; isPresent?: boolean | null },
+  fields: {
+    startNumber?: number | null;
+    isPresent?: boolean | null;
+    childName?: string;
+    birthYear?: number;
+  },
 ): Promise<void> {
   const res = await fetch("/api/admin/update-child", {
     method: "PATCH",

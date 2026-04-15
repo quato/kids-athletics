@@ -20,20 +20,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 401, { error: "Unauthorized" });
   }
 
-  const { orderId, status } = req.body as { orderId?: number; status?: string };
+  const body = req.body as {
+    orderId?: number;
+    status?: string;
+    parentName?: string;
+    phone?: string;
+    email?: string;
+  };
 
-  if (!orderId || !status || !["paid", "pending"].includes(status)) {
-    return badRequest(res, "Required fields: orderId (number), status ('paid' | 'pending')");
+  if (!body.orderId || typeof body.orderId !== "number") {
+    return badRequest(res, "Required field: orderId (number)");
   }
+
+  const { orderId } = body;
+
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+
+  if (body.status !== undefined) {
+    if (!["paid", "pending"].includes(body.status)) {
+      return badRequest(res, "status must be 'paid' or 'pending'");
+    }
+    const paidAt = body.status === "paid" ? new Date() : null;
+    values.push(body.status);
+    setClauses.push(`status = $${values.length}`);
+    values.push(paidAt);
+    setClauses.push(`paid_at = $${values.length}`);
+  }
+
+  if (body.parentName !== undefined) {
+    if (!body.parentName.trim()) return badRequest(res, "parentName cannot be empty");
+    values.push(body.parentName.trim());
+    setClauses.push(`parent_name = $${values.length}`);
+  }
+
+  if (body.phone !== undefined) {
+    if (!body.phone.trim()) return badRequest(res, "phone cannot be empty");
+    values.push(body.phone.trim());
+    setClauses.push(`phone = $${values.length}`);
+  }
+
+  if (body.email !== undefined) {
+    if (!body.email.trim()) return badRequest(res, "email cannot be empty");
+    values.push(body.email.trim().toLowerCase());
+    setClauses.push(`email = $${values.length}`);
+  }
+
+  if (setClauses.length === 0) {
+    return badRequest(res, "Provide at least one field to update");
+  }
+
+  values.push(orderId);
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const paidAt = status === "paid" ? new Date() : null;
     const result = await client.query(
-      `UPDATE orders SET status = $1, paid_at = $2 WHERE id = $3 RETURNING id`,
-      [status, paidAt, orderId],
+      `UPDATE orders SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING id`,
+      values,
     );
 
     if (result.rowCount === 0) {
@@ -41,8 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return json(res, 404, { error: "Order not found" });
     }
 
-    if (status === "paid") {
-      // Mark children as present by default when manually setting to paid
+    if (body.status === "paid") {
       await client.query(
         `UPDATE registrations SET is_present = true WHERE order_id = $1 AND is_present IS NULL`,
         [orderId],

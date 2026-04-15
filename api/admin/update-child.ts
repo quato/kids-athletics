@@ -24,6 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     childId?: number;
     startNumber?: number | null;
     isPresent?: boolean | null;
+    childName?: string;
+    birthYear?: number;
   };
 
   if (!body.childId || typeof body.childId !== "number") {
@@ -43,8 +45,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     setClauses.push(`is_present = $${values.length}`);
   }
 
+  if ("childName" in body) {
+    if (!body.childName?.trim()) return badRequest(res, "childName cannot be empty");
+    values.push(body.childName.trim());
+    setClauses.push(`child_name = $${values.length}`);
+  }
+
+  if ("birthYear" in body) {
+    if (!body.birthYear || body.birthYear < 2000) return badRequest(res, "Invalid birthYear");
+    values.push(body.birthYear);
+    setClauses.push(`birth_year = $${values.length}`);
+  }
+
   if (setClauses.length === 0) {
-    return badRequest(res, "Provide at least one field to update: startNumber or isPresent");
+    return badRequest(res, "Provide at least one field to update");
   }
 
   values.push(body.childId);
