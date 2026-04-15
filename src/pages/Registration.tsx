@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -72,6 +72,23 @@ const Registration = () => {
     control: form.control,
     name: "children",
   });
+
+  // Default event: first event whose name contains "виставков" (case-insensitive),
+  // fallback to first available event.
+  const defaultEventId = eventsData
+    ? (eventsData.find((e) => /виставков/i.test(e.name))?.id ?? eventsData[0]?.id ?? 0)
+    : 0;
+
+  // Once events load, update children that still have the placeholder eventId=0
+  useEffect(() => {
+    if (!eventsData || defaultEventId === 0) return;
+    const current = form.getValues("children");
+    current.forEach((child, index) => {
+      if (Number(child.eventId) === 0) {
+        form.setValue(`children.${index}.eventId`, defaultEventId);
+      }
+    });
+  }, [eventsData, defaultEventId, form]);
 
   // Calculate total amount from current event selections
   const watchedChildren = form.watch("children");
@@ -343,7 +360,7 @@ const Registration = () => {
                       variant="outline"
                       size="sm"
                       className="w-full gap-2"
-                      onClick={() => append({ childName: "", birthYear: 0, eventId: 0 })}
+                      onClick={() => append({ childName: "", birthYear: 0, eventId: defaultEventId })}
                     >
                       <PlusCircle className="w-4 h-4" />
                       Додати ще дитину

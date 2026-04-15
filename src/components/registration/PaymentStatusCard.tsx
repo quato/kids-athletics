@@ -25,8 +25,7 @@ function buildQrValue(paymentCode: string, amount: number): string {
   if (monoKey) {
     // Monobank deep link: opens payment screen in browser or app with
     // amount (in kopecks) and payment code pre-filled.
-    const amountKopecks = Math.round(amount * 100);
-    return `https://send.monobank.ua/${monoKey}?a=${amountKopecks}&t=${encodeURIComponent(paymentCode)}`;
+    return `https://send.monobank.ua/${monoKey}?a=${amount}&t=${encodeURIComponent(paymentCode)}`;
   }
   // Fallback: plain text with all payment details.
   return `Картка: ${CARD_NUMBER}\nКод платежу: ${paymentCode}\nСума: ${amount} грн`;
