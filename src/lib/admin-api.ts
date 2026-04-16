@@ -150,6 +150,7 @@ export interface UnlinkedTransaction {
   comment: string | null;
   counterName: string | null;
   amount: number;
+  rawPayload: Record<string, unknown>;
 }
 
 export async function fetchUnlinkedTransactions(token: string): Promise<UnlinkedTransaction[]> {

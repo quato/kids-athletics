@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2 } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2, FileJson } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -697,6 +697,35 @@ function ManualRegistrationModal({
   );
 }
 
+// ── JSON viewer modal ────────────────────────────────────────────────────────
+
+function JsonModal({ data, onClose }: { data: unknown; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
+          <h2 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
+            <FileJson className="w-4 h-4 text-muted-foreground" />
+            JSON транзакції
+          </h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <pre className="overflow-auto flex-1 px-5 py-4 text-xs font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
 // ── Transactions tab ─────────────────────────────────────────────────────────
 
 function TransactionsTab({ token, orders }: { token: string; orders: Order[] }) {
@@ -773,6 +802,7 @@ function TransactionRow({
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showJson, setShowJson] = useState(false);
 
   const txDate = transaction.time
     ? new Date(transaction.time * 1000).toLocaleString("uk-UA", {
@@ -807,53 +837,63 @@ function TransactionRow({
   const senderLabel = transaction.counterName || transaction.description || "—";
 
   return (
-    <div className="bg-card rounded-xl shadow p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span className="font-semibold text-sm text-foreground truncate">{senderLabel}</span>
-          <span className="font-bold text-sm text-secondary whitespace-nowrap">{transaction.amount} грн</span>
+    <>
+      {showJson && <JsonModal data={transaction.rawPayload} onClose={() => setShowJson(false)} />}
+      <div className="bg-card rounded-xl shadow p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="font-semibold text-sm text-foreground truncate">{senderLabel}</span>
+            <span className="font-bold text-sm text-secondary whitespace-nowrap">{transaction.amount} грн</span>
+            <button
+              onClick={() => setShowJson(true)}
+              title="Переглянути JSON"
+              className="ml-1 p-0.5 rounded text-muted-foreground hover:text-primary transition-colors"
+            >
+              <FileJson className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p>{txDate}</p>
+            {transaction.comment && (
+              <p>Призначення: <span className="font-mono text-foreground">{transaction.comment}</span></p>
+            )}
+            {transaction.description && transaction.description !== senderLabel && (
+              <p>Опис: {transaction.description}</p>
+            )}
+            <p className="font-mono text-[10px] opacity-60">{transaction.id}</p>
+          </div>
         </div>
-        <div className="text-xs text-muted-foreground space-y-0.5">
-          <p>{txDate}</p>
-          {transaction.comment && (
-            <p>Призначення: <span className="font-mono text-foreground">{transaction.comment}</span></p>
-          )}
-          {transaction.description && transaction.description !== senderLabel && (
-            <p>Опис: {transaction.description}</p>
-          )}
-          <p className="font-mono text-[10px] opacity-60">{transaction.id}</p>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:min-w-[320px]">
+          <select
+            value={selectedOrderId}
+            onChange={(e) => { setSelectedOrderId(e.target.value); setError(null); }}
+            className="flex-1 border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={linking}
+          >
+            <option value="">— Оберіть реєстрацію —</option>
+            {pendingOrders.map((o) => (
+              <option key={o.id} value={o.id}>
+                #{o.id} {o.parentName} — {o.expectedAmount} грн ({o.children.length} дит.)
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            disabled={!selectedOrderId || linking}
+            onClick={handleLink}
+            className="gap-1.5 whitespace-nowrap"
+          >
+            {linking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+            Зв'язати
+          </Button>
         </div>
-      </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:min-w-[320px]">
-        <select
-          value={selectedOrderId}
-          onChange={(e) => { setSelectedOrderId(e.target.value); setError(null); }}
-          className="flex-1 border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          disabled={linking}
-        >
-          <option value="">— Оберіть реєстрацію —</option>
-          {pendingOrders.map((o) => (
-            <option key={o.id} value={o.id}>
-              #{o.id} {o.parentName} — {o.expectedAmount} грн ({o.children.length} дит.)
-            </option>
-          ))}
-        </select>
-        <Button
-          size="sm"
-          disabled={!selectedOrderId || linking}
-          onClick={handleLink}
-          className="gap-1.5 whitespace-nowrap"
-        >
-          {linking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
-          Зв'язати
-        </Button>
+        {error && (
+          <p className="text-xs text-destructive w-full">{error}</p>
+        )}
       </div>
-
-      {error && (
-        <p className="text-xs text-destructive w-full">{error}</p>
-      )}
-    </div>
+    </>
   );
 }
 

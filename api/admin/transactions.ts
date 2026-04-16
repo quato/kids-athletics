@@ -60,6 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           comment: (item.comment as string | undefined) ?? null,
           counterName: (item.counterName as string | undefined) ?? null,
           amount: kopecksToUah((item.amount as number | undefined) ?? 0),
+          rawPayload: item,
         };
       });
 
