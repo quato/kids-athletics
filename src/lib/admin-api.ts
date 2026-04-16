@@ -153,6 +153,33 @@ export interface UnlinkedTransaction {
   rawPayload: Record<string, unknown>;
 }
 
+export interface LinkedTransaction {
+  orderId: number;
+  parentName: string;
+  phone: string;
+  email: string;
+  paymentCode: string;
+  expectedAmount: number;
+  actualAmount: number;
+  amountMatch: boolean;
+  paidAt: string;
+  transactionId: string;
+  description: string | null;
+  comment: string | null;
+  counterName: string | null;
+  rawStatement: Record<string, unknown> | null;
+}
+
+export async function fetchLinkedTransactions(token: string): Promise<LinkedTransaction[]> {
+  const res = await fetch("/api/admin/linked-transactions", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося завантажити прив'язані платежі");
+  const data = (await res.json()) as { linked: LinkedTransaction[] };
+  return data.linked;
+}
+
 export async function fetchUnlinkedTransactions(token: string): Promise<UnlinkedTransaction[]> {
   const res = await fetch("/api/admin/transactions", {
     headers: { Authorization: `Bearer ${token}` },

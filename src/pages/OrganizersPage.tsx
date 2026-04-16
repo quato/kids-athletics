@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction } from "@/lib/admin-api";
-import type { Order, AdminEvent, OrderChild, UnlinkedTransaction } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions } from "@/lib/admin-api";
+import type { Order, AdminEvent, OrderChild, UnlinkedTransaction, LinkedTransaction } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -897,6 +897,123 @@ function TransactionRow({
   );
 }
 
+// ── Linked transactions tab ──────────────────────────────────────────────────
+
+function LinkedTransactionsTab({ token }: { token: string }) {
+  const [jsonModal, setJsonModal] = useState<Record<string, unknown> | null>(null);
+
+  const { data: linked, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-linked-transactions", token],
+    queryFn: () => fetchLinkedTransactions(token),
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Завантаження…
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <p className="text-destructive text-sm py-4">Не вдалося завантажити дані.</p>;
+  }
+
+  if (!linked || linked.length === 0) {
+    return (
+      <div className="bg-card rounded-2xl shadow p-8 text-center text-muted-foreground text-sm">
+        Прив'язаних платежів ще немає.
+      </div>
+    );
+  }
+
+  const mismatches = linked.filter((t) => !t.amountMatch).length;
+
+  return (
+    <>
+      {jsonModal && <JsonModal data={jsonModal} onClose={() => setJsonModal(null)} />}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-muted-foreground">
+          Всього: <strong>{linked.length}</strong>
+          {mismatches > 0 && (
+            <span className="ml-2 text-destructive font-semibold">
+              ⚠ {mismatches} з розбіжністю суми
+            </span>
+          )}
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground bg-muted transition-colors"
+        >
+          Оновити
+        </button>
+      </div>
+
+      <div className="bg-card rounded-2xl shadow overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
+              <th className="px-3 py-3 whitespace-nowrap">Дата оплати</th>
+              <th className="px-3 py-3 whitespace-nowrap">Замов.</th>
+              <th className="px-3 py-3 whitespace-nowrap">Платник (банк)</th>
+              <th className="px-3 py-3 whitespace-nowrap">Батько/Мати</th>
+              <th className="px-3 py-3 whitespace-nowrap">Очікувалось</th>
+              <th className="px-3 py-3 whitespace-nowrap">Надійшло</th>
+              <th className="px-3 py-3 whitespace-nowrap">Призначення</th>
+              <th className="px-3 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {linked.map((tx) => {
+              const paidDate = new Date(tx.paidAt).toLocaleString("uk-UA", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              const senderLabel = tx.counterName || tx.description || "—";
+
+              return (
+                <tr
+                  key={tx.transactionId}
+                  className={`border-b border-border last:border-0 ${!tx.amountMatch ? "bg-destructive/5" : ""}`}
+                >
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{paidDate}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">#{tx.orderId}</td>
+                  <td className="px-3 py-2.5 text-xs max-w-[160px] truncate" title={senderLabel}>{senderLabel}</td>
+                  <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{tx.parentName}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{tx.expectedAmount} грн</td>
+                  <td className={`px-3 py-2.5 font-bold whitespace-nowrap ${tx.amountMatch ? "text-success" : "text-destructive"}`}>
+                    {tx.actualAmount} грн
+                    {!tx.amountMatch && <span className="ml-1 text-xs font-normal">⚠</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground max-w-[180px] truncate" title={tx.comment ?? tx.description ?? ""}>
+                    {tx.comment || tx.description || <span className="opacity-40 italic">відсутнє</span>}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    {tx.rawStatement && (
+                      <button
+                        onClick={() => setJsonModal(tx.rawStatement!)}
+                        title="Переглянути JSON"
+                        className="p-0.5 rounded text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <FileJson className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 // ── Stats card ──────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon: Icon, className }: {
@@ -921,7 +1038,7 @@ function StatCard({ label, value, icon: Icon, className }: {
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
 type Filter = "all" | "pending" | "paid";
-type Tab = "registrations" | "transactions";
+type Tab = "registrations" | "transactions" | "linked";
 
 function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -1041,9 +1158,22 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
             <Link2 className="w-3.5 h-3.5" />
             Нерозпізнані платежі
           </button>
+          <button
+            onClick={() => setActiveTab("linked")}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+              activeTab === "linked"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Прив'язані платежі
+          </button>
         </div>
 
-        {activeTab === "transactions" ? (
+        {activeTab === "linked" ? (
+          <LinkedTransactionsTab token={token} />
+        ) : activeTab === "transactions" ? (
           <TransactionsTab token={token} orders={orders ?? []} />
         ) : (
           <>
