@@ -142,6 +142,43 @@ export async function updateChild(
   if (!res.ok) throw new Error("Не вдалося оновити дані дитини");
 }
 
+export interface UnlinkedTransaction {
+  id: string;
+  receivedAt: string;
+  time?: number;
+  description: string;
+  comment: string | null;
+  counterName: string | null;
+  amount: number;
+}
+
+export async function fetchUnlinkedTransactions(token: string): Promise<UnlinkedTransaction[]> {
+  const res = await fetch("/api/admin/transactions", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося завантажити транзакції");
+  const data = (await res.json()) as { transactions: UnlinkedTransaction[] };
+  return data.transactions;
+}
+
+export async function linkTransaction(
+  token: string,
+  orderId: number,
+  transactionId: string,
+): Promise<void> {
+  const res = await fetch("/api/admin/transactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ orderId, transactionId }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error ?? "Не вдалося зв'язати транзакцію");
+  }
+}
+
 export async function fetchOrders(token: string): Promise<Order[]> {
   const res = await fetch("/api/admin/orders", {
     headers: { Authorization: `Bearer ${token}` },

@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, Save, AlertTriangle, Download } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder } from "@/lib/admin-api";
-import type { Order, AdminEvent, OrderChild } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction } from "@/lib/admin-api";
+import type { Order, AdminEvent, OrderChild, UnlinkedTransaction } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -697,6 +697,166 @@ function ManualRegistrationModal({
   );
 }
 
+// ── Transactions tab ─────────────────────────────────────────────────────────
+
+function TransactionsTab({ token, orders }: { token: string; orders: Order[] }) {
+  const queryClient = useQueryClient();
+  const pendingOrders = orders.filter((o) => o.status !== "paid");
+
+  const { data: transactions, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-transactions", token],
+    queryFn: () => fetchUnlinkedTransactions(token),
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Завантаження…
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <p className="text-destructive text-sm py-4">Не вдалося завантажити транзакції.</p>;
+  }
+
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="bg-card rounded-2xl shadow p-8 text-center text-muted-foreground text-sm">
+        Всі транзакції вже зв'язані з реєстраціями.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-muted-foreground">
+          Знайдено <strong>{transactions.length}</strong> транзакцій без реєстрації. Оберіть реєстрацію та натисніть «Зв'язати».
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground bg-muted transition-colors"
+        >
+          Оновити
+        </button>
+      </div>
+      {transactions.map((tx) => (
+        <TransactionRow
+          key={tx.id}
+          transaction={tx}
+          pendingOrders={pendingOrders}
+          token={token}
+          onLinked={() => {
+            queryClient.invalidateQueries({ queryKey: ["admin-transactions", token] });
+            queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TransactionRow({
+  transaction,
+  pendingOrders,
+  token,
+  onLinked,
+}: {
+  transaction: UnlinkedTransaction;
+  pendingOrders: Order[];
+  token: string;
+  onLinked: () => void;
+}) {
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [linking, setLinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const txDate = transaction.time
+    ? new Date(transaction.time * 1000).toLocaleString("uk-UA", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : new Date(transaction.receivedAt).toLocaleString("uk-UA", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+  const handleLink = async () => {
+    if (!selectedOrderId) return;
+    setLinking(true);
+    setError(null);
+    try {
+      await linkTransaction(token, parseInt(selectedOrderId, 10), transaction.id);
+      onLinked();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Помилка");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const senderLabel = transaction.counterName || transaction.description || "—";
+
+  return (
+    <div className="bg-card rounded-xl shadow p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <span className="font-semibold text-sm text-foreground truncate">{senderLabel}</span>
+          <span className="font-bold text-sm text-secondary whitespace-nowrap">{transaction.amount} грн</span>
+        </div>
+        <div className="text-xs text-muted-foreground space-y-0.5">
+          <p>{txDate}</p>
+          {transaction.comment && (
+            <p>Призначення: <span className="font-mono text-foreground">{transaction.comment}</span></p>
+          )}
+          {transaction.description && transaction.description !== senderLabel && (
+            <p>Опис: {transaction.description}</p>
+          )}
+          <p className="font-mono text-[10px] opacity-60">{transaction.id}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:min-w-[320px]">
+        <select
+          value={selectedOrderId}
+          onChange={(e) => { setSelectedOrderId(e.target.value); setError(null); }}
+          className="flex-1 border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          disabled={linking}
+        >
+          <option value="">— Оберіть реєстрацію —</option>
+          {pendingOrders.map((o) => (
+            <option key={o.id} value={o.id}>
+              #{o.id} {o.parentName} — {o.expectedAmount} грн ({o.children.length} дит.)
+            </option>
+          ))}
+        </select>
+        <Button
+          size="sm"
+          disabled={!selectedOrderId || linking}
+          onClick={handleLink}
+          className="gap-1.5 whitespace-nowrap"
+        >
+          {linking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+          Зв'язати
+        </Button>
+      </div>
+
+      {error && (
+        <p className="text-xs text-destructive w-full">{error}</p>
+      )}
+    </div>
+  );
+}
+
 // ── Stats card ──────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon: Icon, className }: {
@@ -721,10 +881,12 @@ function StatCard({ label, value, icon: Icon, className }: {
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
 type Filter = "all" | "pending" | "paid";
+type Tab = "registrations" | "transactions";
 
 function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("registrations");
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading, isError, error, refetch } = useQuery({
@@ -795,16 +957,20 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       <Navbar />
       <main className="flex-1 container mx-auto max-w-6xl px-4 pt-28 pb-16">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-heading font-black text-2xl text-foreground">Реєстрації</h1>
+          <h1 className="font-heading font-black text-2xl text-foreground">Організатори</h1>
           <div className="flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
-              <Download className="w-4 h-4" />
-              Експорт CSV
-            </Button>
-            <Button size="sm" onClick={() => setShowModal(true)} className="gap-2">
-              <PlusCircle className="w-4 h-4" />
-              Додати вручну
-            </Button>
+            {activeTab === "registrations" && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Експорт CSV
+                </Button>
+                <Button size="sm" onClick={() => setShowModal(true)} className="gap-2">
+                  <PlusCircle className="w-4 h-4" />
+                  Додати вручну
+                </Button>
+              </>
+            )}
             <Button variant="outline" size="sm" onClick={onLogout} className="gap-2">
               <LogOut className="w-4 h-4" />
               Вийти
@@ -812,79 +978,110 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <StatCard label="Усього заявок" value={totalOrders} icon={Users} />
-          <StatCard label="Оплачено" value={paidOrders} icon={CheckCircle2} />
-          <StatCard label="Очікує оплату" value={pendingOrders} icon={Clock} />
-          <StatCard label="Зібрано" value={`${totalCollected} грн`} icon={Banknote} />
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-4">
-          {(["all", "pending", "paid"] as Filter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                filter === f
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f === "all" ? "Всі" : f === "pending" ? "Очікують" : "Оплачені"}
-            </button>
-          ))}
+        {/* Tab switcher */}
+        <div className="flex gap-2 mb-6">
           <button
-            onClick={() => refetch()}
-            className="ml-auto px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground bg-muted transition-colors"
+            onClick={() => setActiveTab("registrations")}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+              activeTab === "registrations"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
           >
-            Оновити
+            Реєстрації
+          </button>
+          <button
+            onClick={() => setActiveTab("transactions")}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+              activeTab === "transactions"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            Нерозпізнані платежі
           </button>
         </div>
 
-        {/* Table */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-16 text-muted-foreground">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            Завантаження…
-          </div>
-        )}
-        {isError && !isLoading && (
-          <p className="text-destructive text-sm py-4">
-            Не вдалося завантажити дані. {error instanceof Error ? error.message : ""}
-          </p>
-        )}
-        {orders && (
-          <div className="bg-card rounded-2xl shadow overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
-                  <th className="px-3 py-3">Дата</th>
-                  <th className="px-3 py-3 whitespace-nowrap">Батько/Мати</th>
-                  <th className="px-3 py-3">Контакти</th>
-                  <th className="px-3 py-3 text-center">Діти</th>
-                  <th className="px-3 py-3">Сума</th>
-                  <th className="px-3 py-3">Статус</th>
-                  <th className="px-3 py-3 hidden lg:table-cell">Код платежу</th>
-                  <th className="px-3 py-3" />
-                  <th className="px-2 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground text-sm">
-                      Реєстрацій не знайдено
-                    </td>
-                  </tr>
-                )}
-                {filtered.map((order) => (
-                  <OrderRow key={order.id} order={order} token={token} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {activeTab === "transactions" ? (
+          <TransactionsTab token={token} orders={orders ?? []} />
+        ) : (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <StatCard label="Усього заявок" value={totalOrders} icon={Users} />
+              <StatCard label="Оплачено" value={paidOrders} icon={CheckCircle2} />
+              <StatCard label="Очікує оплату" value={pendingOrders} icon={Clock} />
+              <StatCard label="Зібрано" value={`${totalCollected} грн`} icon={Banknote} />
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex gap-2 mb-4">
+              {(["all", "pending", "paid"] as Filter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    filter === f
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f === "all" ? "Всі" : f === "pending" ? "Очікують" : "Оплачені"}
+                </button>
+              ))}
+              <button
+                onClick={() => refetch()}
+                className="ml-auto px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground bg-muted transition-colors"
+              >
+                Оновити
+              </button>
+            </div>
+
+            {/* Table */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-16 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Завантаження…
+              </div>
+            )}
+            {isError && !isLoading && (
+              <p className="text-destructive text-sm py-4">
+                Не вдалося завантажити дані. {error instanceof Error ? error.message : ""}
+              </p>
+            )}
+            {orders && (
+              <div className="bg-card rounded-2xl shadow overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
+                      <th className="px-3 py-3">Дата</th>
+                      <th className="px-3 py-3 whitespace-nowrap">Батько/Мати</th>
+                      <th className="px-3 py-3">Контакти</th>
+                      <th className="px-3 py-3 text-center">Діти</th>
+                      <th className="px-3 py-3">Сума</th>
+                      <th className="px-3 py-3">Статус</th>
+                      <th className="px-3 py-3 hidden lg:table-cell">Код платежу</th>
+                      <th className="px-3 py-3" />
+                      <th className="px-2 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground text-sm">
+                          Реєстрацій не знайдено
+                        </td>
+                      </tr>
+                    )}
+                    {filtered.map((order) => (
+                      <OrderRow key={order.id} order={order} token={token} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </main>
       <Footer />
