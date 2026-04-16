@@ -35,6 +35,11 @@ export type MatchResult =
 export const FALLBACK_WINDOW_DAYS = 7;
 
 export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
+  // Ignore outbound / zero-amount operations – they can never be payments
+  if (item.amount <= 0) {
+    return { status: "not_matched" };
+  }
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -49,14 +54,17 @@ export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
       return { status: "duplicate", orderId: dupCheck.rows[0].id };
     }
 
-    // 2. Primary match: payment_code inside description
+    // 2. Primary match: payment_code inside description OR comment
     const primaryMatch = await client.query<{ id: number }>(
       `SELECT id FROM orders
        WHERE status = 'pending'
-         AND $1 ILIKE '%' || payment_code || '%'
+         AND (
+           $1 ILIKE '%' || payment_code || '%'
+           OR $2 ILIKE '%' || payment_code || '%'
+         )
        ORDER BY created_at DESC
        LIMIT 1`,
-      [item.description ?? ""],
+      [item.description ?? "", item.comment ?? ""],
     );
 
     let orderId: number | null = null;

@@ -207,6 +207,28 @@ export async function linkTransaction(
   }
 }
 
+export interface WebhookEvent {
+  id: number;
+  eventType: string;
+  account: string | null;
+  statementItemId: string | null;
+  processed: boolean;
+  processedAt: string | null;
+  error: string | null;
+  payload: Record<string, unknown>;
+  receivedAt: string;
+}
+
+export async function fetchWebhooks(token: string, limit = 100): Promise<WebhookEvent[]> {
+  const res = await fetch(`/api/admin/transactions?tab=webhooks&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося завантажити логи webhooks");
+  const data = (await res.json()) as { events: WebhookEvent[] };
+  return data.events;
+}
+
 export async function fetchOrders(token: string): Promise<Order[]> {
   const res = await fetch("/api/admin/orders", {
     headers: { Authorization: `Bearer ${token}` },

@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2, FileJson } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2, FileJson, Webhook, Copy, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions } from "@/lib/admin-api";
-import type { Order, AdminEvent, OrderChild, UnlinkedTransaction, LinkedTransaction } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions, fetchWebhooks } from "@/lib/admin-api";
+import type { Order, AdminEvent, OrderChild, UnlinkedTransaction, LinkedTransaction, WebhookEvent } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -318,6 +318,54 @@ function ConfirmDeleteButton({ onConfirm, disabled }: { onConfirm: () => Promise
 
 // ── Order row ───────────────────────────────────────────────────────────────
 
+const MONO_SEND_KEY = import.meta.env.VITE_MONO_SEND_KEY as string | undefined;
+
+function buildPaymentLink(paymentCode: string, amountUah: number): string {
+  if (MONO_SEND_KEY) {
+    return `https://send.monobank.ua/${MONO_SEND_KEY}?a=${amountUah * 100}&t=${encodeURIComponent(paymentCode)}`;
+  }
+  return `Картка: 4874 0700 5666 0853\nКод: ${paymentCode}\nСума: ${amountUah} грн`;
+}
+
+function CopyPaymentLinkButton({ paymentCode, amountUah }: { paymentCode: string; amountUah: number }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(buildPaymentLink(paymentCode, amountUah));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback for older browsers
+      const text = buildPaymentLink(paymentCode, amountUah);
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+        copied
+          ? "bg-success/15 text-success"
+          : "bg-primary/10 text-primary hover:bg-primary/20"
+      }`}
+      title={MONO_SEND_KEY ? "Скопіювати посилання для оплати через Monobank" : "Скопіювати реквізити для оплати"}
+    >
+      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? "Скопійовано!" : "Копіювати посилання"}
+    </button>
+  );
+}
+
 function OrderRow({ order, token }: { order: Order; token: string }) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
@@ -448,6 +496,9 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                   />
                 </span>
                 <span>Код платежу: <span className="font-mono font-bold text-foreground">{order.paymentCode}</span></span>
+                {order.status !== "paid" && (
+                  <CopyPaymentLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} />
+                )}
                 {order.paidAt && (
                   <span>Оплачено: {new Date(order.paidAt).toLocaleString("uk-UA")}</span>
                 )}
@@ -1014,6 +1065,130 @@ function LinkedTransactionsTab({ token }: { token: string }) {
   );
 }
 
+// ── Webhooks log tab ────────────────────────────────────────────────────────
+
+function WebhooksTab({ token }: { token: string }) {
+  const [jsonModal, setJsonModal] = useState<Record<string, unknown> | null>(null);
+
+  const { data: events, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-webhooks", token],
+    queryFn: () => fetchWebhooks(token, 100),
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Завантаження…
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <p className="text-destructive text-sm py-4">Не вдалося завантажити логи.</p>;
+  }
+
+  if (!events || events.length === 0) {
+    return (
+      <div className="bg-card rounded-2xl shadow p-8 text-center text-muted-foreground text-sm">
+        Webhooks ще не надходили.
+      </div>
+    );
+  }
+
+  const errorCount = events.filter((e) => e.error).length;
+  const unprocessedCount = events.filter((e) => !e.processed).length;
+
+  return (
+    <>
+      {jsonModal && <JsonModal data={jsonModal} onClose={() => setJsonModal(null)} />}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-muted-foreground">
+          Останні <strong>{events.length}</strong> подій
+          {unprocessedCount > 0 && (
+            <span className="ml-2 text-yellow-600 dark:text-yellow-400 font-semibold">
+              · {unprocessedCount} не оброблено
+            </span>
+          )}
+          {errorCount > 0 && (
+            <span className="ml-2 text-destructive font-semibold">
+              · {errorCount} з помилкою
+            </span>
+          )}
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground bg-muted transition-colors"
+        >
+          Оновити
+        </button>
+      </div>
+
+      <div className="bg-card rounded-2xl shadow overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
+              <th className="px-3 py-3 whitespace-nowrap">Дата</th>
+              <th className="px-3 py-3 whitespace-nowrap">Тип</th>
+              <th className="px-3 py-3 whitespace-nowrap">Акаунт</th>
+              <th className="px-3 py-3 whitespace-nowrap">Transaction ID</th>
+              <th className="px-3 py-3 whitespace-nowrap">Статус</th>
+              <th className="px-3 py-3 whitespace-nowrap">Помилка</th>
+              <th className="px-3 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((ev) => {
+              const receivedDate = new Date(ev.receivedAt).toLocaleString("uk-UA", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              });
+
+              return (
+                <tr
+                  key={ev.id}
+                  className={`border-b border-border last:border-0 ${ev.error ? "bg-destructive/5" : ""}`}
+                >
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{receivedDate}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs">{ev.eventType}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground max-w-[120px] truncate" title={ev.account ?? ""}>{ev.account ?? "—"}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground max-w-[140px] truncate" title={ev.statementItemId ?? ""}>{ev.statementItemId ?? "—"}</td>
+                  <td className="px-3 py-2.5">
+                    {ev.processed ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success">
+                        <CheckCircle2 className="w-3 h-3" /> Оброблено
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        <Clock className="w-3 h-3" /> Не оброблено
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-destructive max-w-[200px] truncate" title={ev.error ?? ""}>{ev.error ?? <span className="text-muted-foreground opacity-40">—</span>}</td>
+                  <td className="px-3 py-2.5">
+                    <button
+                      onClick={() => setJsonModal(ev.payload)}
+                      title="Переглянути JSON"
+                      className="p-0.5 rounded text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <FileJson className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 // ── Stats card ──────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon: Icon, className }: {
@@ -1038,7 +1213,7 @@ function StatCard({ label, value, icon: Icon, className }: {
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
 type Filter = "all" | "pending" | "paid";
-type Tab = "registrations" | "transactions" | "linked";
+type Tab = "registrations" | "transactions" | "linked" | "webhooks";
 
 function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -1169,9 +1344,22 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
             <CheckCircle2 className="w-3.5 h-3.5" />
             Прив'язані платежі
           </button>
+          <button
+            onClick={() => setActiveTab("webhooks")}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+              activeTab === "webhooks"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Webhook className="w-3.5 h-3.5" />
+            Логи Webhooks
+          </button>
         </div>
 
-        {activeTab === "linked" ? (
+        {activeTab === "webhooks" ? (
+          <WebhooksTab token={token} />
+        ) : activeTab === "linked" ? (
           <LinkedTransactionsTab token={token} />
         ) : activeTab === "transactions" ? (
           <TransactionsTab token={token} orders={orders ?? []} />

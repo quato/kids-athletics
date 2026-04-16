@@ -3,6 +3,44 @@ import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, serverError } from "../_lib/http.js";
 import { kopecksToUah, unixToDate } from "../_lib/monobank.js";
 
+// ── Webhook events log (GET ?tab=webhooks) ────────────────────────────────────
+
+async function handleGetWebhooks(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const limit = Math.min(parseInt((req.query.limit as string) ?? "100", 10) || 100, 500);
+
+  const result = await pool.query<{
+    id: number;
+    event_type: string;
+    account: string | null;
+    statement_item_id: string | null;
+    processed: boolean;
+    processed_at: string | null;
+    error: string | null;
+    payload: unknown;
+    received_at: string;
+  }>(
+    `SELECT id, event_type, account, statement_item_id, processed, processed_at, error, payload, received_at
+     FROM mono_events
+     ORDER BY received_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+
+  const events = result.rows.map((row) => ({
+    id: row.id,
+    eventType: row.event_type,
+    account: row.account,
+    statementItemId: row.statement_item_id,
+    processed: row.processed,
+    processedAt: row.processed_at,
+    error: row.error,
+    payload: row.payload,
+    receivedAt: row.received_at,
+  }));
+
+  return json(res, 200, { events });
+}
+
 // ── Linked transactions (GET ?linked=true) ────────────────────────────────────
 
 async function handleGetLinked(res: VercelResponse): Promise<void> {
@@ -83,6 +121,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── GET ──────────────────────────────────────────────────────────────────
   if (req.method === "GET") {
+    // ?tab=webhooks → return raw mono_events log
+    if (req.query.tab === "webhooks") {
+      try {
+        return await handleGetWebhooks(req, res);
+      } catch (err) {
+        return serverError(res, err);
+      }
+    }
+
     // ?linked=true → return already-linked transactions for verification
     if (req.query.linked === "true") {
       try {
