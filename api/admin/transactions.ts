@@ -193,22 +193,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const order = orderCheck.rows[0];
 
-    // Send email confirmation
-    try {
-      await sendPaymentConfirmationEmail({
-        to: order.email,
-        parentName: order.parent_name,
-        children: childrenResult.rows.map((r) => ({
-          childName: r.child_name,
-          eventName: r.event_name,
-        })),
-        paymentCode: order.payment_code,
-        totalAmount: parseFloat(order.expected_amount),
-        orderId: order.id,
-        paidAt,
-      });
-    } catch (err) {
-      console.error("[transactions] payment email failed:", err);
+    // Send payment confirmation email (same as automatic matching)
+    if (order.email) {
+      try {
+        await sendPaymentConfirmationEmail({
+          to: order.email,
+          parentName: order.parent_name,
+          children: childrenResult.rows.map((r) => ({
+            childName: r.child_name,
+            eventName: r.event_name,
+          })),
+          paymentCode: order.payment_code,
+          totalAmount: parseFloat(order.expected_amount),
+          orderId: order.id,
+          paidAt,
+        });
+      } catch (err) {
+        console.error("[transactions] payment email failed:", err);
+      }
+    } else {
+      console.warn(`[transactions] order #${order.id} has no email – skipping confirmation email`);
     }
 
     // Send Telegram notification
