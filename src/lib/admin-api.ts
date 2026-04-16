@@ -171,7 +171,7 @@ export interface LinkedTransaction {
 }
 
 export async function fetchLinkedTransactions(token: string): Promise<LinkedTransaction[]> {
-  const res = await fetch("/api/admin/linked-transactions", {
+  const res = await fetch("/api/admin/transactions?linked=true", {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) throw new Error("UNAUTHORIZED");

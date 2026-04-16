@@ -2,6 +2,64 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, serverError } from "../_lib/http.js";
 import { kopecksToUah, unixToDate } from "../_lib/monobank.js";
+
+// ── Linked transactions (GET ?linked=true) ────────────────────────────────────
+
+async function handleGetLinked(res: VercelResponse): Promise<void> {
+  const result = await pool.query<{
+    order_id: number;
+    parent_name: string;
+    phone: string;
+    email: string;
+    payment_code: string;
+    expected_amount: string;
+    paid_at: string;
+    mono_transaction_id: string;
+    raw_statement: Record<string, unknown> | null;
+  }>(
+    `SELECT
+       o.id            AS order_id,
+       o.parent_name,
+       o.phone,
+       o.email,
+       o.payment_code,
+       o.expected_amount,
+       o.paid_at,
+       o.mono_transaction_id,
+       o.raw_statement
+     FROM orders o
+     WHERE o.status = 'paid'
+       AND o.mono_transaction_id IS NOT NULL
+     ORDER BY o.paid_at DESC`,
+  );
+
+  const linked = result.rows.map((row) => {
+    const stmt = row.raw_statement;
+    let actualAmount: number = parseFloat(row.expected_amount);
+    if (stmt && typeof stmt.amount === "number") {
+      actualAmount = kopecksToUah(stmt.amount);
+    }
+    const expectedAmount = parseFloat(row.expected_amount);
+    return {
+      orderId: row.order_id,
+      parentName: row.parent_name,
+      phone: row.phone,
+      email: row.email,
+      paymentCode: row.payment_code,
+      expectedAmount,
+      actualAmount,
+      amountMatch: Math.abs(actualAmount - expectedAmount) < 0.01,
+      paidAt: row.paid_at,
+      transactionId: row.mono_transaction_id,
+      description: stmt && typeof stmt.description === "string" ? stmt.description : null,
+      comment: stmt && typeof stmt.comment === "string" ? stmt.comment : null,
+      counterName: stmt && typeof stmt.counterName === "string" ? stmt.counterName : null,
+      rawStatement: stmt ?? null,
+    };
+  });
+
+  return json(res, 200, { linked });
+}
 import { sendPaymentConfirmationEmail } from "../_lib/email.js";
 import { sendTelegramMessage } from "../_lib/telegram.js";
 
@@ -23,8 +81,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 401, { error: "Unauthorized" });
   }
 
-  // ── GET: return unlinked transactions ──────────────────────────────────────
+  // ── GET ──────────────────────────────────────────────────────────────────
   if (req.method === "GET") {
+    // ?linked=true → return already-linked transactions for verification
+    if (req.query.linked === "true") {
+      try {
+        return await handleGetLinked(res);
+      } catch (err) {
+        return serverError(res, err);
+      }
+    }
+
+    // default → return unlinked transactions
     try {
       const result = await pool.query<{
         statement_item_id: string;
