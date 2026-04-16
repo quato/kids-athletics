@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2, FileJson, Webhook, Copy, Check } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2, FileJson, Webhook, Copy, Check, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -366,6 +366,45 @@ function CopyPaymentLinkButton({ paymentCode, amountUah }: { paymentCode: string
   );
 }
 
+function buildMessageBody(paymentCode: string, amountUah: number): string {
+  const link = buildPaymentLink(paymentCode, amountUah);
+  return MONO_SEND_KEY
+    ? `Оплата реєстрації Kids Athletics FEST — ${amountUah} грн.\nКод: ${paymentCode}\n${link}`
+    : `Оплата реєстрації Kids Athletics FEST — ${amountUah} грн.\nКод платежу: ${paymentCode}\nКартка: 4874 0700 5666 0853`;
+}
+
+function SmsLinkButton({ paymentCode, amountUah, phone }: { paymentCode: string; amountUah: number; phone: string }) {
+  const smsHref = `sms:${phone}?body=${encodeURIComponent(buildMessageBody(paymentCode, amountUah))}`;
+  return (
+    <a
+      href={smsHref}
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+      title={`Надіслати посилання на оплату у СМС на ${phone}`}
+    >
+      <MessageSquare className="w-4 h-4" />
+    </a>
+  );
+}
+
+function ViberLinkButton({ paymentCode, amountUah, phone }: { paymentCode: string; amountUah: number; phone: string }) {
+  // viber://chat?number= opens the chat; text can be pre-filled via forward but chat is more direct
+  const digits = phone.replace(/\D/g, "");
+  const viberHref = `viber://chat?number=${digits}&draft=${encodeURIComponent(buildMessageBody(paymentCode, amountUah))}`;
+  return (
+    <a
+      href={viberHref}
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:opacity-80 transition-opacity"
+      style={{ background: "#7360f2" }}
+      title={`Надіслати посилання на оплату у Viber на ${phone}`}
+    >
+      {/* Viber logo */}
+      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11.985 0C8.415.016 4.247 1.348 2.028 5.537c-1.2 2.28-1.388 5.25-1.017 8.42.285 2.418.987 4.795 2.62 6.495l.009 2.878c.003.71.8 1.106 1.38.694l2.625-1.87c1.314.366 2.65.558 3.95.568h.376c5.424.017 10.8-3.11 11.846-8.93.49-2.717.192-5.56-.78-7.745C21.413 2.14 17.256-.017 11.985 0zm.387 19.727h-.36c-1.186-.009-2.41-.196-3.604-.534a.5.5 0 0 0-.323.025l-2.18 1.553-.007-2.393a.502.502 0 0 0-.149-.351c-1.474-1.529-2.1-3.675-2.361-5.866-.342-2.894-.134-5.569.903-7.557C6.117 2.272 9.683 1.13 12.372 1.118c4.773-.014 8.442 1.875 9.938 5.17.863 1.938 1.13 4.549.69 6.97-.887 4.93-5.603 7.47-10.628 7.47zM16.2 13.94c-.31-.176-.734-.434-.998-.575a.824.824 0 0 0-.793.02c-.251.15-.51.453-.71.654-.126.127-.304.164-.464.1-2.263-.9-3.935-2.746-4.479-5.11a.375.375 0 0 1 .095-.358c.194-.2.48-.448.627-.699a.82.82 0 0 0 .025-.79c-.14-.272-.398-.72-.573-1.042a.823.823 0 0 0-1.118-.323c-.365.212-.77.52-1.02.908-.445.69-.33 1.635-.003 2.396 1.013 2.35 2.71 4.162 4.924 5.249.81.399 1.763.66 2.517.267.421-.22.745-.638.95-1.016a.826.826 0 0 0-.276-1.08l.296.399z" />
+      </svg>
+    </a>
+  );
+}
+
 function OrderRow({ order, token }: { order: Order; token: string }) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
@@ -497,7 +536,11 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                 </span>
                 <span>Код платежу: <span className="font-mono font-bold text-foreground">{order.paymentCode}</span></span>
                 {order.status !== "paid" && (
-                  <CopyPaymentLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} />
+                  <span className="inline-flex items-center gap-1">
+                    <CopyPaymentLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} />
+                    <SmsLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} phone={order.phone} />
+                    <ViberLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} phone={order.phone} />
+                  </span>
                 )}
                 {order.paidAt && (
                   <span>Оплачено: {new Date(order.paidAt).toLocaleString("uk-UA")}</span>
