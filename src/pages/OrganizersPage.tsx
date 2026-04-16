@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions, fetchWebhooks } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions, fetchWebhooks, unlinkTransaction } from "@/lib/admin-api";
 import type { Order, AdminEvent, OrderChild, UnlinkedTransaction, LinkedTransaction, WebhookEvent } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
@@ -322,7 +322,7 @@ const MONO_SEND_KEY = import.meta.env.VITE_MONO_SEND_KEY as string | undefined;
 
 function buildPaymentLink(paymentCode: string, amountUah: number): string {
   if (MONO_SEND_KEY) {
-    return `https://send.monobank.ua/${MONO_SEND_KEY}?a=${amountUah * 100}&t=${encodeURIComponent(paymentCode)}`;
+    return `https://send.monobank.ua/${MONO_SEND_KEY}?a=${amountUah}&t=${encodeURIComponent(paymentCode)}`;
   }
   return `Картка: 4874 0700 5666 0853\nКод: ${paymentCode}\nСума: ${amountUah} грн`;
 }
@@ -948,10 +948,65 @@ function TransactionRow({
   );
 }
 
+// ── Unlink confirm button ────────────────────────────────────────────────────
+
+function UnlinkButton({ token, orderId, onUnlinked }: { token: string; orderId: number; onUnlinked: () => void }) {
+  const [stage, setStage] = useState<"idle" | "confirm" | "unlinking">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  if (stage === "idle") {
+    return (
+      <button
+        onClick={(e) => { e.stopPropagation(); setStage("confirm"); }}
+        className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
+        title="Відв'язати платіж від реєстрації"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  if (stage === "confirm") {
+    return (
+      <span className="inline-flex items-center gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+        <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
+        <span className="text-xs font-semibold text-destructive whitespace-nowrap">Відв'язати?</span>
+        <button
+          onClick={async (e) => {
+            e.stopPropagation();
+            setStage("unlinking");
+            setError(null);
+            try {
+              await unlinkTransaction(token, orderId);
+              onUnlinked();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Помилка");
+              setStage("idle");
+            }
+          }}
+          className="px-2 py-0.5 rounded bg-destructive text-destructive-foreground text-xs font-bold hover:opacity-90 transition"
+        >
+          Так
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setStage("idle"); }}
+          className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs font-bold hover:opacity-90 transition"
+        >
+          Ні
+        </button>
+        {error && <span className="text-xs text-destructive">{error}</span>}
+      </span>
+    );
+  }
+
+  return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
+}
+
 // ── Linked transactions tab ──────────────────────────────────────────────────
 
 function LinkedTransactionsTab({ token }: { token: string }) {
   const [jsonModal, setJsonModal] = useState<Record<string, unknown> | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: linked, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-linked-transactions", token],
@@ -1014,6 +1069,7 @@ function LinkedTransactionsTab({ token }: { token: string }) {
               <th className="px-3 py-3 whitespace-nowrap">Надійшло</th>
               <th className="px-3 py-3 whitespace-nowrap">Призначення</th>
               <th className="px-3 py-3" />
+              <th className="px-3 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -1054,6 +1110,17 @@ function LinkedTransactionsTab({ token }: { token: string }) {
                         <FileJson className="w-3.5 h-3.5" />
                       </button>
                     )}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <UnlinkButton
+                      token={token}
+                      orderId={tx.orderId}
+                      onUnlinked={() => {
+                        queryClient.invalidateQueries({ queryKey: ["admin-linked-transactions", token] });
+                        queryClient.invalidateQueries({ queryKey: ["admin-transactions", token] });
+                        queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+                      }}
+                    />
                   </td>
                 </tr>
               );

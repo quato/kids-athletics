@@ -111,8 +111,8 @@ function authenticate(req: VercelRequest): boolean {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "GET" && req.method !== "POST") {
-    return methodNotAllowed(res, ["GET", "POST"]);
+  if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
+    return methodNotAllowed(res, ["GET", "POST", "DELETE"]);
   }
 
   if (!authenticate(req)) {
@@ -141,6 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // default → return unlinked transactions
     try {
+      const accountId = process.env.MONO_ACCOUNT_ID ?? null;
       const result = await pool.query<{
         statement_item_id: string;
         payload: Record<string, unknown>;
@@ -149,12 +150,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `SELECT statement_item_id, payload, received_at
          FROM mono_events
          WHERE event_type = 'StatementItem'
-           AND account = 'ZeA6u7VeMG3F2Qb3vlxfdg'
+           AND ($1::text IS NULL OR account = $1)
            AND statement_item_id IS NOT NULL
            AND statement_item_id NOT IN (
              SELECT mono_transaction_id FROM orders WHERE mono_transaction_id IS NOT NULL
            )
          ORDER BY received_at DESC`,
+        [accountId],
       );
 
       const transactions = result.rows
@@ -185,6 +187,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return json(res, 200, { transactions });
     } catch (err) {
       return serverError(res, err);
+    }
+  }
+
+  // ── DELETE: unlink a transaction from an order ────────────────────────────
+  if (req.method === "DELETE") {
+    const body = req.body as { orderId?: number };
+    if (!body.orderId || typeof body.orderId !== "number") {
+      return badRequest(res, "Required field: orderId (number)");
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const orderCheck = await client.query<{
+        id: number;
+        status: string;
+        mono_transaction_id: string | null;
+        parent_name: string;
+      }>(
+        `SELECT id, status, mono_transaction_id, parent_name FROM orders WHERE id = $1 LIMIT 1`,
+        [body.orderId],
+      );
+
+      if (orderCheck.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return json(res, 404, { error: "Order not found" });
+      }
+
+      const order = orderCheck.rows[0];
+
+      if (order.status !== "paid" || !order.mono_transaction_id) {
+        await client.query("ROLLBACK");
+        return json(res, 409, { error: "Order has no linked Monobank transaction" });
+      }
+
+      // Reset order to pending, clear transaction fields
+      await client.query(
+        `UPDATE orders SET
+           status = 'pending',
+           paid_at = NULL,
+           mono_transaction_id = NULL,
+           raw_statement = NULL
+         WHERE id = $1`,
+        [body.orderId],
+      );
+
+      // Reset children presence set by the auto-pay (only clear those that were auto-set)
+      await client.query(
+        `UPDATE registrations SET is_present = NULL WHERE order_id = $1 AND is_present = true`,
+        [body.orderId],
+      );
+
+      // Unmark the mono_event so it shows up as unlinked again
+      await client.query(
+        `UPDATE mono_events SET processed = false, processed_at = NULL
+         WHERE statement_item_id = $1`,
+        [order.mono_transaction_id],
+      );
+
+      await client.query("COMMIT");
+
+      try {
+        const msg = `🔗 <b>Платіж відв'язано!</b>\nЗамовлення: #${order.id} (${order.parent_name})\nТранзакція: ${order.mono_transaction_id}`;
+        await sendTelegramMessage(msg);
+      } catch (err) {
+        console.error("[transactions] telegram notification failed:", err);
+      }
+
+      return json(res, 200, { ok: true, orderId: order.id });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      return serverError(res, err);
+    } finally {
+      client.release();
     }
   }
 

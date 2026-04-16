@@ -59,6 +59,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 200, { status: "ignored" });
   }
 
+  // Ignore events from accounts other than the configured one
+  const expectedAccount = process.env.MONO_ACCOUNT_ID;
+  if (expectedAccount && payload?.data?.account && payload.data.account !== expectedAccount) {
+    console.log(`[monobank-webhook] ignoring event from account ${payload.data.account}`);
+    await markEvent(true);
+    return json(res, 200, { status: "ignored" });
+  }
+
   const statementItem = payload?.data?.statementItem;
   if (!statementItem) {
     await markEvent(false, "StatementItem payload missing data.statementItem");

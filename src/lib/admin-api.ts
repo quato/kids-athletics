@@ -190,6 +190,19 @@ export async function fetchUnlinkedTransactions(token: string): Promise<Unlinked
   return data.transactions;
 }
 
+export async function unlinkTransaction(token: string, orderId: number): Promise<void> {
+  const res = await fetch("/api/admin/transactions", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ orderId }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error ?? "Не вдалося відв'язати транзакцію");
+  }
+}
+
 export async function linkTransaction(
   token: string,
   orderId: number,
