@@ -65,15 +65,27 @@ function AgeGroupRow({ groupKey, age, event, count, starters }: {
       {open && hasStarters && (
         <tr className="border-b border-border bg-muted/20">
           <td colSpan={4} className="px-5 py-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-1">
-              {starters.map((s) => (
-                <div key={s.startNumber} className="flex items-center gap-2 text-sm py-0.5">
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground font-black text-xs shrink-0">
-                    {s.startNumber}
-                  </span>
-                  <span className="text-foreground font-medium truncate">{s.childName}</span>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
+                    <th className="py-1.5 pr-3 text-left font-semibold w-20">Старт №</th>
+                    <th className="py-1.5 text-left font-semibold">ПІБ дитини</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {starters.map((s) => (
+                    <tr key={s.startNumber} className="border-b border-border/40 last:border-0">
+                      <td className="py-2 pr-3">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] h-7 rounded-full bg-primary text-primary-foreground font-black text-xs px-2">
+                          {s.startNumber}
+                        </span>
+                      </td>
+                      <td className="py-2 text-foreground font-medium break-words">{s.childName}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </td>
         </tr>
