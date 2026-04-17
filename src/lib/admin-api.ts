@@ -17,6 +17,7 @@ export interface Order {
   email: string;
   paymentCode: string;
   expectedAmount: number;
+  monoTransactionId: string | null;
   children: OrderChild[];
 }
 

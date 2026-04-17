@@ -1,5 +1,5 @@
 import pool from "./db.js";
-import { kopecksToUah, unixToDate, type StatementItem } from "./monobank.js";
+import { unixToDate, type StatementItem } from "./monobank.js";
 
 export interface ChildInfo {
   childName: string;
@@ -28,11 +28,11 @@ export type MatchResult =
  *
  * Matching strategy:
  *  1. Duplicate guard – if mono_transaction_id already exists in orders => "duplicate"
- *  2. Primary – status='pending' AND description contains payment_code
- *  3. Fallback – status='pending' AND expected_amount = amount/100
- *               AND created_at within the last FALLBACK_WINDOW_DAYS days
+ *  2. Primary match – status='pending' AND description OR comment contains payment_code
+ *
+ * If payment_code is not present in the statement text the payment is left
+ * unmatched and shows up on the "Нерозпізнані платежі" tab for manual linking.
  */
-export const FALLBACK_WINDOW_DAYS = 7;
 
 export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
   // Ignore outbound / zero-amount operations – they can never be payments
@@ -67,31 +67,15 @@ export async function matchAndPay(item: StatementItem): Promise<MatchResult> {
       [item.description ?? "", item.comment ?? ""],
     );
 
-    let orderId: number | null = null;
-
-    if (primaryMatch.rows.length > 0) {
-      orderId = primaryMatch.rows[0].id;
-    } else {
-      // 3. Fallback: amount + time window
-      const uah = kopecksToUah(item.amount);
-      const fallbackMatch = await client.query<{ id: number }>(
-        `SELECT id FROM orders
-         WHERE status = 'pending'
-           AND expected_amount = $1
-           AND created_at >= now() - interval '${FALLBACK_WINDOW_DAYS} days'
-         ORDER BY created_at DESC
-         LIMIT 1`,
-        [uah],
-      );
-      if (fallbackMatch.rows.length > 0) {
-        orderId = fallbackMatch.rows[0].id;
-      }
-    }
-
-    if (orderId === null) {
+    // Only match when the payment_code is explicitly present in description or comment.
+    // If the code is missing, the payment goes to the "Нерозпізнані платежі" tab
+    // so an organizer can link it manually.
+    if (primaryMatch.rows.length === 0) {
       await client.query("ROLLBACK");
       return { status: "not_matched" };
     }
+
+    const orderId = primaryMatch.rows[0].id;
 
     const paidAt = unixToDate(item.time);
 

@@ -545,6 +545,19 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                 {order.paidAt && (
                   <span>Оплачено: {new Date(order.paidAt).toLocaleString("uk-UA")}</span>
                 )}
+                {order.monoTransactionId && (
+                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                    <span>ID транзакції:</span>
+                    <span className="font-mono text-[10px] text-foreground bg-muted rounded px-1.5 py-0.5 break-all">
+                      {order.monoTransactionId}
+                    </span>
+                    <UnlinkButton
+                      orderId={order.id}
+                      token={token}
+                      onUnlinked={() => queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })}
+                    />
+                  </span>
+                )}
               </div>
             </div>
           </td>

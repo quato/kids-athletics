@@ -23,6 +23,7 @@ interface OrderRow {
   email: string;
   payment_code: string;
   expected_amount: string;
+  mono_transaction_id: string | null;
   children: Array<{
     id: number;
     childName: string;
@@ -54,6 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         o.email,
         o.payment_code,
         o.expected_amount,
+        o.mono_transaction_id,
         json_agg(
           json_build_object(
             'id',          r.id,
@@ -151,6 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       email: row.email,
       paymentCode: row.payment_code,
       expectedAmount: parseFloat(row.expected_amount),
+      monoTransactionId: row.mono_transaction_id,
       children: row.children ?? [],
     }));
 
