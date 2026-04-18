@@ -67,10 +67,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { parentName, phone, email, children } = req.body as RegistrationBody;
 
-  // Enforce 140-order capacity limit
-  const capResult = await pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM orders");
-  if (parseInt(capResult.rows[0].count, 10) >= 140) {
-    return json(res, 409, { error: "Реєстрацію закрито — досягнуто максимальну кількість заявок (140)" });
+  // Enforce 140-children capacity limit
+  const CHILDREN_LIMIT = 140;
+  const capResult = await pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM registrations");
+  const registeredChildren = parseInt(capResult.rows[0].count, 10);
+  if (registeredChildren + children.length > CHILDREN_LIMIT) {
+    return json(res, 409, {
+      error: `Реєстрацію закрито — досягнуто максимальну кількість дітей (${CHILDREN_LIMIT})`,
+    });
   }
 
   const client = await pool.connect();

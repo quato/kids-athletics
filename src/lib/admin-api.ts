@@ -21,6 +21,13 @@ export interface Order {
   children: OrderChild[];
 }
 
+export interface AdminOrdersData {
+  orders: Order[];
+  registeredChildren: number;
+  childrenLimit: number;
+  remainingPlaces: number;
+}
+
 export async function login(password: string): Promise<void> {
   const res = await fetch("/api/admin/auth", {
     method: "POST",
@@ -243,7 +250,7 @@ export async function fetchWebhooks(token: string, limit = 100): Promise<Webhook
   return data.events;
 }
 
-export async function fetchOrders(token: string): Promise<Order[]> {
+export async function fetchOrders(token: string): Promise<AdminOrdersData> {
   const res = await fetch("/api/admin/orders", {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -256,6 +263,5 @@ export async function fetchOrders(token: string): Promise<Order[]> {
     throw new Error("Не вдалося завантажити реєстрації");
   }
 
-  const data = (await res.json()) as { orders: Order[] };
-  return data.orders;
+  return (await res.json()) as AdminOrdersData;
 }

@@ -43,35 +43,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 401, { error: "Unauthorized" });
   }
 
+  const CHILDREN_LIMIT = 140;
+
   try {
-    const result = await pool.query<OrderRow>(`
-      SELECT
-        o.id,
-        o.status,
-        o.created_at,
-        o.paid_at,
-        o.parent_name,
-        o.phone,
-        o.email,
-        o.payment_code,
-        o.expected_amount,
-        o.mono_transaction_id,
-        json_agg(
-          json_build_object(
-            'id',          r.id,
-            'childName',   r.child_name,
-            'birthYear',   r.birth_year,
-            'eventName',   e.name,
-            'startNumber', r.start_number,
-            'isPresent',   r.is_present
-          ) ORDER BY r.id
-        ) FILTER (WHERE r.id IS NOT NULL) AS children
-      FROM orders o
-      LEFT JOIN registrations r ON r.order_id = o.id
-      LEFT JOIN events e ON e.id = r.event_id
-      GROUP BY o.id
-      ORDER BY o.created_at DESC
-    `);
+    const [result, childrenCountResult] = await Promise.all([
+      pool.query<OrderRow>(`
+        SELECT
+          o.id,
+          o.status,
+          o.created_at,
+          o.paid_at,
+          o.parent_name,
+          o.phone,
+          o.email,
+          o.payment_code,
+          o.expected_amount,
+          o.mono_transaction_id,
+          json_agg(
+            json_build_object(
+              'id',          r.id,
+              'childName',   r.child_name,
+              'birthYear',   r.birth_year,
+              'eventName',   e.name,
+              'startNumber', r.start_number,
+              'isPresent',   r.is_present
+            ) ORDER BY r.id
+          ) FILTER (WHERE r.id IS NOT NULL) AS children
+        FROM orders o
+        LEFT JOIN registrations r ON r.order_id = o.id
+        LEFT JOIN events e ON e.id = r.event_id
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+      `),
+      pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM registrations"),
+    ]);
 
     if (req.query.format === "csv") {
       const headers = [
@@ -157,7 +162,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       children: row.children ?? [],
     }));
 
-    return json(res, 200, { orders });
+    const registeredChildren = parseInt(childrenCountResult.rows[0].count, 10);
+    const remainingPlaces = Math.max(CHILDREN_LIMIT - registeredChildren, 0);
+
+    return json(res, 200, {
+      orders,
+      registeredChildren,
+      childrenLimit: CHILDREN_LIMIT,
+      remainingPlaces,
+    });
   } catch (err) {
     return serverError(res, err);
   }

@@ -1344,7 +1344,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const [activeTab, setActiveTab] = useState<Tab>("registrations");
   const queryClient = useQueryClient();
 
-  const { data: orders, isLoading, isError, error, refetch } = useQuery({
+  const { data: ordersData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin-orders", token],
     queryFn: () => fetchOrders(token),
     retry: false,
@@ -1361,16 +1361,18 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
     return null;
   }
 
-  const totalOrders = orders?.length ?? 0;
-  const paidOrders = orders?.filter((o) => o.status === "paid").length ?? 0;
-  const pendingOrders = orders?.filter((o) => o.status !== "paid").length ?? 0;
-  const totalCollected = orders?.filter((o) => o.status === "paid").reduce((s, o) => s + o.expectedAmount, 0) ?? 0;
+  const orders = ordersData?.orders ?? [];
+  const totalOrders = orders.length;
+  const paidOrders = orders.filter((o) => o.status === "paid").length;
+  const pendingOrders = orders.filter((o) => o.status !== "paid").length;
+  const totalCollected = orders.filter((o) => o.status === "paid").reduce((s, o) => s + o.expectedAmount, 0);
+  const remainingPlaces = ordersData?.remainingPlaces ?? 0;
 
-  const filtered = orders?.filter((o) => {
+  const filtered = orders.filter((o) => {
     if (filter === "paid") return o.status === "paid";
     if (filter === "pending") return o.status !== "paid";
     return true;
-  }) ?? [];
+  });
 
   const handleRegistrationSuccess = () => {
     setShowModal(false);
@@ -1485,15 +1487,16 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
         ) : activeTab === "linked" ? (
           <LinkedTransactionsTab token={token} />
         ) : activeTab === "transactions" ? (
-          <TransactionsTab token={token} orders={orders ?? []} />
+          <TransactionsTab token={token} orders={orders} />
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
               <StatCard label="Усього заявок" value={totalOrders} icon={Users} />
               <StatCard label="Оплачено" value={paidOrders} icon={CheckCircle2} />
               <StatCard label="Очікує оплату" value={pendingOrders} icon={Clock} />
               <StatCard label="Зібрано" value={`${totalCollected} грн`} icon={Banknote} />
+              <StatCard label="Вільні місця" value={remainingPlaces} icon={Users} />
             </div>
 
             {/* Filter tabs */}
