@@ -2,6 +2,7 @@ import { isRegistrationOpen } from "@/lib/registration-open";
 
 const TEAM_REGISTRATION_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header";
+const TEAM_REGISTRATION_CLOSED = true;
 
 const TeamSection = () => {
   const registrationOpen = isRegistrationOpen();
@@ -27,15 +28,25 @@ const TeamSection = () => {
             ))}
           </ul>
 
-          <div className={`border-l-4 rounded-xl p-4 mb-6 ${registrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
+          <div
+            className={`border-l-4 rounded-xl p-4 mb-6 ${
+              TEAM_REGISTRATION_CLOSED
+                ? "bg-destructive/10 border-destructive"
+                : registrationOpen
+                ? "bg-success/10 border-success"
+                : "bg-muted border-muted-foreground/30"
+            }`}
+          >
             <p className="text-foreground font-semibold text-sm">
-              {registrationOpen ? (
+              {TEAM_REGISTRATION_CLOSED ? (
+                <>Реєстрація на командну першість <span className="text-destructive">закрита</span> — набрано 10 команд.</>
+              ) : registrationOpen ? (
                 <>Реєстрація на командні забіги <span className="text-success">відкрита</span>!</>
               ) : (
                 <>Реєстрація на командні забіги відкриється <span className="text-primary">19 квітня</span>.</>
               )}
             </p>
-            {registrationOpen && (
+            {registrationOpen && !TEAM_REGISTRATION_CLOSED && (
               <a
                 href={TEAM_REGISTRATION_URL}
                 target="_blank"
