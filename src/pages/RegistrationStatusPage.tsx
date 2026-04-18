@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import PaymentStatusCard from "@/components/registration/PaymentStatusCard";
 import { fetchOrderStatus } from "@/lib/registration-api";
 
+const VIBER_CHAT_URL = "viber://chat?number=380973670219";
+
 const RegistrationStatusPage = () => {
   const { id } = useParams<{ id: string }>();
   const numId = id ? parseInt(id, 10) : NaN;
@@ -122,7 +124,7 @@ const RegistrationStatusPage = () => {
 
               <div className="flex flex-wrap gap-2 pt-1">
                 <a
-                  href="viber://chat?number=%2B380973670219"
+                  href={VIBER_CHAT_URL}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
                 >
                   <MessageCircle className="w-4 h-4" />

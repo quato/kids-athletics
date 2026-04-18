@@ -28,6 +28,7 @@ import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-
 
 const currentYear = new Date().getFullYear();
 const SUPPORT_PHONE = "+380973670219";
+const VIBER_CHAT_URL = "viber://chat?number=380973670219";
 
 function formatPhoneInput(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -267,7 +268,7 @@ const Registration = () => {
               </p>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href="viber://chat?number=%2B380973670219"
+                  href={VIBER_CHAT_URL}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
                 >
                   <MessageCircle className="w-4 h-4" />

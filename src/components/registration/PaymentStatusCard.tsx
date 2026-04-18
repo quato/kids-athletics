@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, Clock, MessageCircle, Phone, ExternalLink } from "lucide-react";
+import { CheckCircle, Clock } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { fetchOrderStatus } from "@/lib/registration-api";
 
@@ -19,7 +19,6 @@ interface Props {
 const POLL_INTERVAL_MS = 10_000;
 
 const CARD_NUMBER = "4874 0700 5666 0853";
-const SUPPORT_PHONE = "+380973670219";
 
 function buildQrValue(paymentCode: string, amount: number): string {
   const monoKey = import.meta.env.VITE_MONO_SEND_KEY as string | undefined;
@@ -103,34 +102,6 @@ const PaymentInstructions = ({ paymentCode, amount }: { paymentCode: string; amo
       надходження платежу.
     </p>
 
-    <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-      <p className="text-xs font-semibold text-foreground">
-        Якщо оплата виконана не через Monobank:
-      </p>
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        Надішліть квитанцію (скріншот) та прізвище й ім'я учасника у Viber за номером{" "}
-        <a href={`tel:${SUPPORT_PHONE}`} className="text-primary font-semibold hover:underline">
-          {SUPPORT_PHONE}
-        </a>.
-      </p>
-      <div className="flex flex-wrap gap-2 pt-1">
-        <a
-          href="viber://chat?number=%2B380973670219"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition"
-        >
-          <MessageCircle className="w-3.5 h-3.5" />
-          Надіслати квитанцію у Viber
-          <ExternalLink className="w-3 h-3" />
-        </a>
-        <a
-          href={`tel:${SUPPORT_PHONE}`}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border text-xs font-semibold text-foreground hover:bg-muted transition"
-        >
-          <Phone className="w-3.5 h-3.5" />
-          Зателефонувати
-        </a>
-      </div>
-    </div>
   </div>
 );
 
