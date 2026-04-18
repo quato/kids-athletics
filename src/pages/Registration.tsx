@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, PlusCircle, Trash2, MessageCircle, Phone, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import {
@@ -27,6 +27,7 @@ import type { RegistrationResponse } from "@/types/registration";
 import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
 
 const currentYear = new Date().getFullYear();
+const SUPPORT_PHONE = "+380973670219";
 
 function formatPhoneInput(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -253,6 +254,35 @@ const Registration = () => {
               totalAmount={order.totalAmount}
               children={order.children}
             />
+
+            <div className="bg-card rounded-2xl shadow-md p-6 space-y-3">
+              <h3 className="font-heading font-bold text-base text-foreground">
+                Якщо оплата не через Monobank
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Надішліть квитанцію (скріншот) та прізвище й ім'я учасника у Viber за номером{" "}
+                <a href={`tel:${SUPPORT_PHONE}`} className="text-primary font-semibold hover:underline">
+                  {SUPPORT_PHONE}
+                </a>.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="viber://chat?number=%2B380973670219"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Надіслати квитанцію у Viber
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href={`tel:${SUPPORT_PHONE}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-muted transition"
+                >
+                  <Phone className="w-4 h-4" />
+                  Зателефонувати
+                </a>
+              </div>
+            </div>
           </div>
         ) : (
           /* ── Registration form ── */
