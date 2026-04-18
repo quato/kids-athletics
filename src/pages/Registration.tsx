@@ -24,9 +24,45 @@ import { fetchEvents, createRegistration } from "@/lib/registration-api";
 import type { EventsResponse } from "@/lib/registration-api";
 import type { RegistrationResponse } from "@/types/registration";
 
-import { isRegistrationOpen } from "@/lib/registration-open";
+import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
 
 const currentYear = new Date().getFullYear();
+
+function formatPhoneInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  let local = digits;
+
+  if (local.startsWith("380")) {
+    local = local.slice(2);
+  } else if (local.startsWith("38")) {
+    local = local.slice(2);
+  }
+
+  if (!local.startsWith("0") && local.length > 0) {
+    local = `0${local}`;
+  }
+
+  local = local.slice(0, 10);
+
+  const p1 = local.slice(0, 3);
+  const p2 = local.slice(3, 6);
+  const p3 = local.slice(6, 8);
+  const p4 = local.slice(8, 10);
+
+  let out = "+38";
+  if (p1) out += ` ${p1}`;
+  if (p2) out += ` ${p2}`;
+  if (p3) out += ` ${p3}`;
+  if (p4) out += ` ${p4}`;
+  return out;
+}
+
+function normalizePhoneForSubmit(masked: string): string {
+  const digits = masked.replace(/\D/g, "");
+  if (digits.startsWith("380")) return `+${digits.slice(0, 12)}`;
+  if (digits.startsWith("0")) return `+38${digits.slice(0, 10)}`;
+  return masked.trim();
+}
 
 const childSchema = z.object({
   childName: z.string().min(2, "Введіть ім'я дитини (мінімум 2 символи)"),
@@ -41,8 +77,12 @@ const schema = z.object({
   parentName: z.string().min(2, "Введіть ім'я батька/матері (мінімум 2 символи)"),
   phone: z
     .string()
-    .min(10, "Введіть номер телефону")
-    .regex(/^\+?[\d\s\-()]{10,20}$/, "Невірний формат телефону"),
+    .refine((value) => {
+      const digits = value.replace(/\D/g, "");
+      if (digits.startsWith("380")) return digits.length === 12;
+      if (digits.startsWith("0")) return digits.length === 10;
+      return false;
+    }, "Формат: +38 0XX XXX XX XX"),
   email: z.string().email("Невірний формат email"),
   children: z.array(childSchema).min(1, "Додайте хоча б одну дитину"),
 });
@@ -108,7 +148,7 @@ const Registration = () => {
     try {
       const data = await createRegistration({
         parentName: values.parentName,
-        phone: values.phone,
+        phone: normalizePhoneForSubmit(values.phone),
         email: values.email,
         children: values.children.map((c) => ({
           childName: c.childName,
@@ -150,7 +190,7 @@ const Registration = () => {
             </h2>
             <p className="text-muted-foreground">
               Реєстрація на виставкові забіги відкриється{" "}
-              <span className="text-primary font-semibold">19 квітня</span>.
+              <span className="text-primary font-semibold">{REGISTRATION_OPEN_LABEL}</span>.
             </p>
             <Link
               to="/"
@@ -265,7 +305,13 @@ const Registration = () => {
                         <FormItem>
                           <FormLabel>Телефон *</FormLabel>
                           <FormControl>
-                            <Input placeholder="+380 50 123 4567" type="tel" {...field} />
+                            <Input
+                              placeholder="+38 0XX XXX XX XX"
+                              type="tel"
+                              inputMode="tel"
+                              value={field.value}
+                              onChange={(e) => field.onChange(formatPhoneInput(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

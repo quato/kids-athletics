@@ -1,4 +1,6 @@
-const REGISTRATION_OPEN_DATE = new Date("2026-04-19T00:00:00");
+// Registration opens at 19 Apr 2026, 16:00 Kyiv time (UTC+3).
+const REGISTRATION_OPEN_DATE = new Date(Date.UTC(2026, 3, 19, 13, 0, 0));
+export const REGISTRATION_OPEN_LABEL = "19 квітня о 16:00 (за Києвом)";
 
 /**
  * Returns true when registration is open.

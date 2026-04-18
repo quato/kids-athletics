@@ -1,4 +1,4 @@
-import { isRegistrationOpen } from "@/lib/registration-open";
+import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
 
 const TEAM_REGISTRATION_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header";
@@ -43,7 +43,7 @@ const TeamSection = () => {
               ) : registrationOpen ? (
                 <>Реєстрація на командні забіги <span className="text-success">відкрита</span>!</>
               ) : (
-                <>Реєстрація на командні забіги відкриється <span className="text-primary">19 квітня</span>.</>
+                <>Реєстрація на командні забіги відкриється <span className="text-primary">{REGISTRATION_OPEN_LABEL}</span>.</>
               )}
             </p>
             {registrationOpen && !TEAM_REGISTRATION_CLOSED && (

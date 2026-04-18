@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { isRegistrationOpen } from "@/lib/registration-open";
+import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
 
 const races = [
   { age: "Інваліди", event: "Біг по прямій 60 м" },
@@ -51,7 +51,7 @@ const ExhibitionRaces = () => {
               {registrationOpen ? (
                 <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
               ) : (
-                <>Реєстрація на виставкові забіги відкриється <span className="text-primary">19 квітня</span>.</>
+                <>Реєстрація на виставкові забіги відкриється <span className="text-primary">{REGISTRATION_OPEN_LABEL}</span>.</>
               )}
             </p>
             {registrationOpen && (

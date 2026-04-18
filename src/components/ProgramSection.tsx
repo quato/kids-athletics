@@ -4,6 +4,7 @@ import icon3 from "@/assets/icon-3-2026.png";
 import icon4 from "@/assets/icon-4-2026.png";
 import icon5 from "@/assets/icon-5-2026.png";
 import icon6 from "@/assets/icon-6-2026.png";
+import { isRegistrationOpen } from "@/lib/registration-open";
 
 const disciplines = [
   { icon: icon1, name: "Естафета «Спринт»" },
@@ -14,7 +15,15 @@ const disciplines = [
   { icon: icon6, name: "Гонка «Супер-перегони» 3 хв" },
 ];
 
+const OLD_PARTICIPANTS_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1Ys3lEj6HKbeLex5H86oZNphtZMJ2KSqS2KUqxgyl2is/edit?usp=sharing";
+const NEW_PARTICIPANTS_SHEET_URL =
+  import.meta.env.VITE_PARTICIPANTS_SHEET_URL_NEW ?? OLD_PARTICIPANTS_SHEET_URL;
+
 const ProgramSection = () => {
+  const registrationOpen = isRegistrationOpen();
+  const participantsSheetUrl = registrationOpen ? NEW_PARTICIPANTS_SHEET_URL : OLD_PARTICIPANTS_SHEET_URL;
+
   return (
     <section id="program" className="section-padding bg-background">
       <div className="container mx-auto max-w-5xl">
@@ -34,7 +43,7 @@ const ProgramSection = () => {
 
         <div className="text-center mb-8">
           <a
-            href="https://docs.google.com/spreadsheets/d/1Ys3lEj6HKbeLex5H86oZNphtZMJ2KSqS2KUqxgyl2is/edit?usp=sharing"
+            href={participantsSheetUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
