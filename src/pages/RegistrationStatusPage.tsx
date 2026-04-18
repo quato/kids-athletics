@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Phone, MessageCircle, ExternalLink } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PaymentStatusCard from "@/components/registration/PaymentStatusCard";
@@ -92,6 +92,52 @@ const RegistrationStatusPage = () => {
               totalAmount={data.expectedAmount}
               children={data.children}
             />
+
+            {/* Payment guidance */}
+            <div className="bg-card rounded-2xl shadow-md p-6 space-y-4">
+              <h2 className="font-heading font-bold text-lg text-foreground">Важливо щодо підтвердження оплати</h2>
+
+              <div className="inline-flex items-center rounded-full bg-orange-500/10 text-orange-700 dark:text-orange-400 px-3 py-1 text-xs font-semibold">
+                Після оплати в іншому банку обов'язково напишіть у Viber
+              </div>
+
+              <div className="space-y-2 text-sm text-foreground/90 leading-relaxed">
+                <p>
+                  При оплаті з <strong>MonoBank</strong> реєстрація відбувається автоматично.
+                </p>
+                <p>
+                  При оплаті з <strong>Приват24</strong> або іншого банку потрібно надіслати скріншот оплати
+                  та прізвище й ім'я учасника у Viber за номером{" "}
+                  <a
+                    href="tel:+380973670219"
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    +380973670219
+                  </a>.
+                </p>
+                <p>
+                  Підтвердження оплати буде надіслано на вказану вами електронну пошту.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <a
+                  href="viber://chat?number=%2B380973670219"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Написати у Viber
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href="tel:+380973670219"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-muted transition"
+                >
+                  <Phone className="w-4 h-4" />
+                  Зателефонувати
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </main>

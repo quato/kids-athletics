@@ -7,7 +7,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const AGE_GROUPS = [
-  { key: "special",   age: "Інваліди",    event: "Біг по прямій 60 м" },
   { key: "2022-2023", age: "2022 – 2023", event: "Біг на 60 м" },
   { key: "2020-2021", age: "2020 – 2021", event: "Біг на 100 м (50м гладкий біг + 50м з бар'єрами)" },
   { key: "2018-2019", age: "2018 – 2019", event: "Біг на 150 м (100м гладкий біг + 50м з перешкодами)" },

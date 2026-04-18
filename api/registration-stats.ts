@@ -25,7 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         SELECT ${AGE_GROUP_EXPR} AS age_group, COUNT(*) AS count
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
-        WHERE r.is_present = true AND r.start_number IS NOT NULL AND o.status = 'paid'
+        WHERE r.is_present = true
+          AND r.start_number IS NOT NULL
+          AND r.birth_year > 0
+          AND o.status = 'paid'
         GROUP BY age_group
       `),
       // children with a start number (present + start_number set, paid orders only)
@@ -38,11 +41,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         JOIN orders o ON o.id = r.order_id
         WHERE r.is_present = true
           AND r.start_number IS NOT NULL
+          AND r.birth_year > 0
           AND o.status = 'paid'
         ORDER BY r.start_number ASC
       `),
       // total children across all orders (all statuses)
-      pool.query<{ count: string }>(`SELECT COUNT(*) AS count FROM registrations`),
+      pool.query<{ count: string }>(`SELECT COUNT(*) AS count FROM registrations WHERE birth_year > 0`),
     ]);
 
     const counts: Record<string, number> = {};
