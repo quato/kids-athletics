@@ -918,6 +918,7 @@ function TransactionRow({
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
       })
     : new Date(transaction.receivedAt).toLocaleString("uk-UA", {
         day: "2-digit",
@@ -925,6 +926,7 @@ function TransactionRow({
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
       });
 
   const handleLink = async () => {
@@ -1136,6 +1138,7 @@ function LinkedTransactionsTab({ token }: { token: string }) {
                 year: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
+                second: "2-digit",
               });
               const senderLabel = tx.counterName || tx.description || "—";
 
