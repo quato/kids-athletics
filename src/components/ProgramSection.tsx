@@ -4,7 +4,7 @@ import icon3 from "@/assets/icon-3-2026.png";
 import icon4 from "@/assets/icon-4-2026.png";
 import icon5 from "@/assets/icon-5-2026.png";
 import icon6 from "@/assets/icon-6-2026.png";
-import { isRegistrationOpen } from "@/lib/registration-open";
+import { Link } from "react-router-dom";
 
 const disciplines = [
   { icon: icon1, name: "Естафета «Спринт»" },
@@ -15,14 +15,12 @@ const disciplines = [
   { icon: icon6, name: "Гонка «Супер-перегони» 3 хв" },
 ];
 
-const OLD_PARTICIPANTS_SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/1Ys3lEj6HKbeLex5H86oZNphtZMJ2KSqS2KUqxgyl2is/edit?usp=sharing";
-const NEW_PARTICIPANTS_SHEET_URL =
-  import.meta.env.VITE_PARTICIPANTS_SHEET_URL_NEW ?? OLD_PARTICIPANTS_SHEET_URL;
+// 19 Apr 2026, 16:10 Kyiv time (UTC+3)
+const STATS_OPEN_DATE = new Date(Date.UTC(2026, 3, 19, 13, 10, 0));
+const STATS_OPEN_LABEL = "19 квітня о 16:10 (за Києвом)";
 
 const ProgramSection = () => {
-  const registrationOpen = isRegistrationOpen();
-  const participantsSheetUrl = registrationOpen ? NEW_PARTICIPANTS_SHEET_URL : OLD_PARTICIPANTS_SHEET_URL;
+  const statsOpen = new Date() >= STATS_OPEN_DATE;
 
   return (
     <section id="program" className="section-padding bg-background">
@@ -42,14 +40,27 @@ const ProgramSection = () => {
         </div>
 
         <div className="text-center mb-8">
-          <a
-            href={participantsSheetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
-          >
-            📋 Список зареєстрованих учасників
-          </a>
+          {statsOpen ? (
+            <Link
+              to="/stats"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
+            >
+              📋 Список зареєстрованих учасників
+            </Link>
+          ) : (
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-muted text-muted-foreground font-bold shadow cursor-not-allowed"
+              >
+                📋 Список зареєстрованих учасників
+              </button>
+              <p className="text-xs text-muted-foreground">
+                Список буде доступний незабаром після відкриття реєстрації.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="bg-card rounded-xl p-5 shadow-sm max-w-2xl mx-auto">
