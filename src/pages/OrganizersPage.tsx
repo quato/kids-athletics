@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions, fetchWebhooks, unlinkTransaction } from "@/lib/admin-api";
+import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions, fetchWebhooks, unlinkTransaction } from "@/lib/admin-api";
 import type { Order, AdminEvent, OrderChild, UnlinkedTransaction, LinkedTransaction, WebhookEvent } from "@/lib/admin-api";
 
 const STORAGE_KEY = "organizer_token";
@@ -165,7 +165,15 @@ function InlineEditField({
 
 // ── Child editable row ───────────────────────────────────────────────────────
 
-function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
+function ChildEditRow({
+  child,
+  token,
+  canDelete,
+}: {
+  child: OrderChild;
+  token: string;
+  canDelete: boolean;
+}) {
   const queryClient = useQueryClient();
   const [startNumber, setStartNumber] = useState(
     child.startNumber != null ? String(child.startNumber) : "",
@@ -261,6 +269,15 @@ function ChildEditRow({ child, token }: { child: OrderChild; token: string }) {
 
         {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
         {saved && !saving && <span className="text-xs text-success">Збережено</span>}
+
+        {canDelete && (
+          <ConfirmDeleteButton
+            onConfirm={async () => {
+              await deleteChild(token, child.id);
+              queryClient.invalidateQueries({ queryKey: ["admin-orders", token] });
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -507,7 +524,12 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                 Діти — стартовий номер та присутність
               </p>
               {order.children.map((c) => (
-                <ChildEditRow key={c.id} child={c} token={token} />
+                <ChildEditRow
+                  key={c.id}
+                  child={c}
+                  token={token}
+                  canDelete={order.status !== "paid" && order.children.length > 1}
+                />
               ))}
               {order.children.length === 0 && (
                 <p className="text-sm text-muted-foreground">Немає даних про дітей</p>

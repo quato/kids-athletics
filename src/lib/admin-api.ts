@@ -131,6 +131,20 @@ export async function updateOrderStatus(
   return updateOrder(token, orderId, { status });
 }
 
+export async function deleteChild(token: string, childId: number): Promise<void> {
+  const res = await fetch("/api/admin/update", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ childId }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (res.status === 409) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error ?? "Не можна видалити цю дитину");
+  }
+  if (!res.ok) throw new Error("Не вдалося видалити дитину");
+}
+
 export async function updateChild(
   token: string,
   childId: number,

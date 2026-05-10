@@ -21,16 +21,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 401, { error: "Unauthorized" });
   }
 
-  // ── DELETE: remove an order and its registrations ──────────────────────────
+  // ── DELETE: remove an order or a single child registration ─────────────────
   if (req.method === "DELETE") {
-    const body = req.body as { orderId?: number };
+    const body = req.body as { orderId?: number; childId?: number };
+
+    // Delete a single child from a pending order
+    if (body.childId && typeof body.childId === "number") {
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        const regCheck = await client.query<{ order_id: number }>(
+          `SELECT order_id FROM registrations WHERE id = $1 LIMIT 1`,
+          [body.childId],
+        );
+        if (regCheck.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return json(res, 404, { error: "Registration not found" });
+        }
+        const orderId = regCheck.rows[0].order_id;
+
+        const orderCheck = await client.query<{ status: string }>(
+          `SELECT status FROM orders WHERE id = $1 LIMIT 1`,
+          [orderId],
+        );
+        if (orderCheck.rows.length === 0 || orderCheck.rows[0].status === "paid") {
+          await client.query("ROLLBACK");
+          return json(res, 409, { error: "Cannot remove child from a paid order" });
+        }
+
+        const countCheck = await client.query<{ cnt: string }>(
+          `SELECT count(*)::text AS cnt FROM registrations WHERE order_id = $1`,
+          [orderId],
+        );
+        if (parseInt(countCheck.rows[0].cnt, 10) <= 1) {
+          await client.query("ROLLBACK");
+          return json(res, 409, { error: "Cannot remove the last child — delete the order instead" });
+        }
+
+        await client.query(`DELETE FROM registrations WHERE id = $1`, [body.childId]);
+
+        // Recalculate expected_amount from remaining registrations
+        await client.query(
+          `UPDATE orders SET expected_amount = (
+             SELECT COALESCE(SUM(e.fee_amount), 0)
+             FROM registrations r JOIN events e ON e.id = r.event_id
+             WHERE r.order_id = $1
+           ) WHERE id = $1`,
+          [orderId],
+        );
+
+        await client.query("COMMIT");
+        return json(res, 200, { ok: true });
+      } catch (err) {
+        await client.query("ROLLBACK");
+        return serverError(res, err);
+      } finally {
+        client.release();
+      }
+    }
+
+    // Delete an entire order
     if (!body.orderId || typeof body.orderId !== "number") {
-      return badRequest(res, "Required field: orderId (number)");
+      return badRequest(res, "Required field: orderId or childId (number)");
     }
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      // Refuse to delete paid orders for safety
       const check = await client.query<{ status: string }>(
         `SELECT status FROM orders WHERE id = $1 LIMIT 1`,
         [body.orderId],
