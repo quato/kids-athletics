@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ORDER BY r.start_number ASC
       `),
       // total children across all orders (all statuses)
-      pool.query<{ count: string }>(`SELECT COUNT(*) AS count FROM registrations WHERE birth_year > 0`),
+      pool.query<{ count: string }>(`SELECT COUNT(*) AS count FROM registrations`),
     ]);
 
     const counts: Record<string, number> = {};
