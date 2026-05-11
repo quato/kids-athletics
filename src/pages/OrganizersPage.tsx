@@ -1393,10 +1393,10 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const totalCollected = orders.filter((o) => o.status === "paid").reduce((s, o) => s + o.expectedAmount, 0);
   const remainingPlaces = ordersData?.remainingPlaces ?? 0;
 
-  const totalChildren = orders.reduce((s, o) => s + o.children.filter((c) => c.birthYear > 0).length, 0);
+  const totalChildren = orders.reduce((s, o) => s + o.children.length, 0);
   const confirmedChildren = orders
     .filter((o) => o.status === "paid")
-    .reduce((s, o) => s + o.children.filter((c) => c.birthYear > 0 && c.startNumber != null && c.isPresent === true).length, 0);
+    .reduce((s, o) => s + o.children.filter((c) => c.startNumber != null && c.isPresent === true).length, 0);
 
   const filtered = orders.filter((o) => {
     if (filter === "paid") return o.status === "paid";
