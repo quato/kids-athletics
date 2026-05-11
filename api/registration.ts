@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { parentName, phone, email, children } = req.body as RegistrationBody;
 
   // Enforce 140-children capacity limit
-  const CHILDREN_LIMIT = 140;
+  const CHILDREN_LIMIT = 152;
   const capResult = await pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM registrations");
   const registeredChildren = parseInt(capResult.rows[0].count, 10);
   if (registeredChildren + children.length > CHILDREN_LIMIT) {

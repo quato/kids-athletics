@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 401, { error: "Unauthorized" });
   }
 
-  const CHILDREN_LIMIT = 140;
+  const CHILDREN_LIMIT = 152;
 
   try {
     const [result, childrenCountResult] = await Promise.all([

@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return methodNotAllowed(res, ["GET"]);
   }
 
-  const CHILDREN_LIMIT = 140;
+  const CHILDREN_LIMIT = 152;
 
   try {
     const [eventsResult, countResult] = await Promise.all([

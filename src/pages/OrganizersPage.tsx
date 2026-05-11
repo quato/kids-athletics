@@ -1393,6 +1393,11 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const totalCollected = orders.filter((o) => o.status === "paid").reduce((s, o) => s + o.expectedAmount, 0);
   const remainingPlaces = ordersData?.remainingPlaces ?? 0;
 
+  const totalChildren = orders.reduce((s, o) => s + o.children.filter((c) => c.birthYear > 0).length, 0);
+  const confirmedChildren = orders
+    .filter((o) => o.status === "paid")
+    .reduce((s, o) => s + o.children.filter((c) => c.birthYear > 0 && c.startNumber != null && c.isPresent === true).length, 0);
+
   const filtered = orders.filter((o) => {
     if (filter === "paid") return o.status === "paid";
     if (filter === "pending") return o.status !== "paid";
@@ -1516,12 +1521,16 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
               <StatCard label="Усього заявок" value={totalOrders} icon={Users} />
               <StatCard label="Оплачено" value={paidOrders} icon={CheckCircle2} />
               <StatCard label="Очікує оплату" value={pendingOrders} icon={Clock} />
-              <StatCard label="Зібрано" value={`${totalCollected} грн`} icon={Banknote} />
               <StatCard label="Вільні місця" value={remainingPlaces} icon={Users} />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              <StatCard label="Дітей заявлено" value={totalChildren} icon={Users} />
+              <StatCard label="Дітей підтверджено" value={confirmedChildren} icon={CheckCircle2} />
+              <StatCard label="Зібрано" value={`${totalCollected} грн`} icon={Banknote} />
             </div>
 
             {/* Filter tabs */}
