@@ -1,17 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "./_lib/db.js";
+import { AGE_GROUP_SQL } from "./_lib/age-groups.js";
 import { json, methodNotAllowed, serverError } from "./_lib/http.js";
-
-const AGE_GROUP_EXPR = `
-  CASE
-    WHEN r.birth_year BETWEEN 2022 AND 2023 THEN '2022-2023'
-    WHEN r.birth_year BETWEEN 2020 AND 2021 THEN '2020-2021'
-    WHEN r.birth_year BETWEEN 2018 AND 2019 THEN '2018-2019'
-    WHEN r.birth_year BETWEEN 2016 AND 2017 THEN '2016-2017'
-    WHEN r.birth_year BETWEEN 2014 AND 2015 THEN '2014-2015'
-    ELSE 'special'
-  END
-`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
@@ -22,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const [countsResult, startersResult, totalResult] = await Promise.all([
       // counts per age group (present + start_number set, paid orders only)
       pool.query<{ age_group: string; count: string }>(`
-        SELECT ${AGE_GROUP_EXPR} AS age_group, COUNT(*) AS count
+        SELECT ${AGE_GROUP_SQL} AS age_group, COUNT(*) AS count
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
         WHERE r.is_present = true
@@ -34,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // children with a start number (present + start_number set, paid orders only)
       pool.query<{ age_group: string; child_name: string; start_number: number }>(`
         SELECT
-          ${AGE_GROUP_EXPR} AS age_group,
+          ${AGE_GROUP_SQL} AS age_group,
           r.child_name,
           r.start_number
         FROM registrations r

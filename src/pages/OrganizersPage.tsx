@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Link2, FileJson, Webhook, Copy, Check, MessageSquare } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Printer, Link2, FileJson, Webhook, Copy, Check, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -1448,6 +1448,15 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
           <div className="flex flex-wrap gap-2 justify-end">
             {activeTab === "registrations" && (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open("/organizers/print-lists", "_blank")}
+                  className="gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Списки на друк
+                </Button>
                 <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
                   <Download className="w-4 h-4" />
                   Експорт CSV

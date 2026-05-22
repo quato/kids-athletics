@@ -264,6 +264,28 @@ export async function fetchWebhooks(token: string, limit = 100): Promise<Webhook
   return data.events;
 }
 
+export interface PrintListParticipant {
+  childName: string;
+  birthYear: number;
+  startNumber: number;
+}
+
+export interface PrintListsData {
+  groups: Record<string, PrintListParticipant[]>;
+  generatedAt: string;
+}
+
+export async function fetchPrintLists(token: string): Promise<PrintListsData> {
+  const res = await fetch("/api/admin/print-lists", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Не вдалося завантажити списки на друк");
+
+  return (await res.json()) as PrintListsData;
+}
+
 export async function fetchOrders(token: string): Promise<AdminOrdersData> {
   const res = await fetch("/api/admin/orders", {
     headers: { Authorization: `Bearer ${token}` },
