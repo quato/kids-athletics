@@ -276,7 +276,7 @@ export interface PrintListsData {
 }
 
 export async function fetchPrintLists(token: string): Promise<PrintListsData> {
-  const res = await fetch("/api/admin/print-lists", {
+  const res = await fetch("/api/admin/orders?format=print-lists", {
     headers: { Authorization: `Bearer ${token}` },
   });
 
