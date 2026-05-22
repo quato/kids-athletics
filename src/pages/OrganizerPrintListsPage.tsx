@@ -29,6 +29,7 @@ function ParticipantsTable({ participants }: { participants: PrintListParticipan
           <th className="text-left">Фамилия и Имя</th>
           <th className="text-center w-28">Год рождения</th>
           <th className="text-center w-28">Стартовый номер</th>
+          <th className="text-left w-32">Примітки</th>
         </tr>
       </thead>
       <tbody>
@@ -38,6 +39,7 @@ function ParticipantsTable({ participants }: { participants: PrintListParticipan
             <td>{p.childName}</td>
             <td className="text-center">{p.birthYear}</td>
             <td className="text-center font-semibold">{p.startNumber}</td>
+            <td></td>
           </tr>
         ))}
       </tbody>
