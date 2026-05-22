@@ -25,14 +25,16 @@ function ParticipantsTable({ participants }: { participants: PrintListParticipan
     <table className="print-table w-full border-collapse">
       <thead>
         <tr>
+          <th className="text-center w-12">№</th>
           <th className="text-left">Фамилия и Имя</th>
           <th className="text-center w-28">Год рождения</th>
           <th className="text-center w-28">Стартовый номер</th>
         </tr>
       </thead>
       <tbody>
-        {participants.map((p) => (
+        {participants.map((p, i) => (
           <tr key={p.startNumber}>
+            <td className="text-center">{i + 1}</td>
             <td>{p.childName}</td>
             <td className="text-center">{p.birthYear}</td>
             <td className="text-center font-semibold">{p.startNumber}</td>
@@ -69,17 +71,71 @@ const OrganizerPrintListsPage = () => {
   return (
     <>
       <style>{`
-        @page {
-          size: A4;
-          margin: 18mm;
+        @media print {
+          @page {
+            size: A4;
+            margin: 15mm 18mm;
+          }
+
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            color: black !important;
+            -webkit-print-color-adjust: exact;
+          }
+
+          .no-print {
+            display: none !important;
+          }
+
+          .print-document {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+          }
+
+          .print-page {
+            page-break-after: always;
+            margin-bottom: 0 !important;
+          }
+
+          .print-page:last-child {
+            page-break-after: auto;
+          }
+
+          .print-table {
+            width: 100% !important;
+          }
+
+          .print-table thead {
+            display: table-header-group;
+          }
+
+          .print-table th,
+          .print-table td {
+            border: 1px solid #333;
+            padding: 5px 8px;
+            font-size: 11pt;
+          }
+
+          .print-table th {
+            background: #eee !important;
+            font-weight: 700;
+          }
+
+          h1 {
+            font-size: 16pt !important;
+          }
         }
 
-        .print-page {
-          page-break-after: always;
-        }
-
-        .print-page:last-child {
-          page-break-after: auto;
+        @media screen {
+          .print-page {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px dashed #ccc;
+          }
         }
 
         .print-table th,
@@ -96,22 +152,6 @@ const OrganizerPrintListsPage = () => {
 
         .print-table thead {
           display: table-header-group;
-        }
-
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-
-          body {
-            background: white !important;
-            color: black !important;
-          }
-
-          .print-document {
-            padding: 0 !important;
-            max-width: none !important;
-          }
         }
       `}</style>
 
@@ -163,7 +203,7 @@ const OrganizerPrintListsPage = () => {
             return (
               <section
                 key={group.key}
-                className={isLast ? "mb-0" : "print-page mb-12"}
+                className={`print-page ${isLast ? "mb-0" : "mb-12"}`}
               >
                 <header className="mb-4">
                   <h1 className="text-xl font-bold font-heading">
