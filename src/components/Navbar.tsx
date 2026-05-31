@@ -48,6 +48,14 @@ const Navbar = () => {
             </a>
           ))}
           <Link
+            to="/results"
+            className={`font-medium transition-colors ${
+              solid ? "text-foreground hover:text-primary" : "text-primary-foreground/90 hover:text-accent"
+            }`}
+          >
+            Результати
+          </Link>
+          <Link
             to="/registration"
             className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
           >
@@ -77,6 +85,13 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
+          <Link
+            to="/results"
+            onClick={() => setMenuOpen(false)}
+            className="block text-foreground font-medium hover:text-primary transition-colors"
+          >
+            Результати
+          </Link>
           <Link
             to="/registration"
             onClick={() => setMenuOpen(false)}

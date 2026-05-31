@@ -39,7 +39,13 @@ const ProgramSection = () => {
           ))}
         </div>
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/results"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
+          >
+            🏆 Результати фесту
+          </Link>
           {statsOpen ? (
             <Link
               to="/stats"

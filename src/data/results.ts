@@ -1,0 +1,288 @@
+export type IndividualRow = {
+  no: number;
+  name: string;
+  birthYear?: number | null;
+  result: string | null;
+  bib: number;
+};
+
+export type AgeCategoryRun = {
+  id: string;
+  label: string;
+  event: string;
+  showBirthYear: boolean;
+  rows: IndividualRow[];
+};
+
+export type TeamDiscipline = {
+  id: string;
+  name: string;
+};
+
+export type TeamStanding = {
+  team: string;
+  finalPlace: number;
+  totalPoints: number;
+  perDiscipline: Record<string, number>;
+};
+
+export const teamDisciplines: TeamDiscipline[] = [
+  { id: "sprint", name: "Спринт" },
+  { id: "jump", name: "Стрибки за 15 сек" },
+  { id: "agility", name: "Квадрат спритності" },
+  { id: "medball", name: "Метання медболу" },
+  { id: "slalom", name: "Слаломний біг" },
+  { id: "endurance", name: "Витривалість" },
+];
+
+export const teamStandings: TeamStanding[] = [
+  {
+    team: "ДНК Чемпіонів",
+    finalPlace: 1,
+    totalPoints: 13,
+    perDiscipline: { sprint: 1, jump: 3, agility: 2, medball: 1, slalom: 2, endurance: 4 },
+  },
+  {
+    team: "Kids Fitness1",
+    finalPlace: 2,
+    totalPoints: 18,
+    perDiscipline: { sprint: 6, jump: 1, agility: 1, medball: 5, slalom: 1, endurance: 4 },
+  },
+  {
+    team: "Kids athletics1",
+    finalPlace: 3,
+    totalPoints: 18,
+    perDiscipline: { sprint: 2, jump: 5, agility: 4, medball: 2, slalom: 3, endurance: 2 },
+  },
+  {
+    team: "1st Legion",
+    finalPlace: 4,
+    totalPoints: 19,
+    perDiscipline: { sprint: 2, jump: 6, agility: 3, medball: 3, slalom: 4, endurance: 1 },
+  },
+  {
+    team: "OCR_DP_TEAM",
+    finalPlace: 5,
+    totalPoints: 31,
+    perDiscipline: { sprint: 4, jump: 2, agility: 5, medball: 6, slalom: 6, endurance: 8 },
+  },
+  {
+    team: "Kids Fitness2",
+    finalPlace: 6,
+    totalPoints: 37,
+    perDiscipline: { sprint: 5, jump: 4, agility: 7, medball: 7, slalom: 5, endurance: 8 },
+  },
+  {
+    team: "Kids athletics2",
+    finalPlace: 7,
+    totalPoints: 38,
+    perDiscipline: { sprint: 7, jump: 7, agility: 6, medball: 8, slalom: 8, endurance: 2 },
+  },
+  {
+    team: "Friends",
+    finalPlace: 8,
+    totalPoints: 45,
+    perDiscipline: { sprint: 8, jump: 5, agility: 8, medball: 9, slalom: 7, endurance: 8 },
+  },
+];
+
+export const ageCategoryRuns: AgeCategoryRun[] = [
+  {
+    id: "2022-2023",
+    label: "2022–2023",
+    event: "Біг на 60 м",
+    showBirthYear: true,
+    rows: [
+      { no: 1, name: "Орнанджі Ян", birthYear: 2023, result: "24,4", bib: 101 },
+      { no: 2, name: "Прокопенко Дмитро", birthYear: 2023, result: "29", bib: 102 },
+      { no: 3, name: "Злата Терпак", birthYear: 2022, result: "18,5", bib: 103 },
+      { no: 4, name: "Залізняк Дем'ян", birthYear: 2023, result: "27,7", bib: 104 },
+      { no: 5, name: "Артем Романенко", birthYear: 2022, result: "16,4", bib: 105 },
+      { no: 6, name: "Стахієва Тетяна", birthYear: 2023, result: "19,4", bib: 106 },
+      { no: 7, name: "Сердюк Лев", birthYear: 2022, result: "18,6", bib: 107 },
+      { no: 8, name: "Артамонов Леон", birthYear: 2023, result: "17", bib: 108 },
+      { no: 9, name: "Бондаренко Мирон", birthYear: 2022, result: "17,6", bib: 109 },
+      { no: 10, name: "Чубата Ємілія", birthYear: 2022, result: "22,6", bib: 110 },
+      { no: 11, name: "Довгопола Діана", birthYear: 2022, result: null, bib: 111 },
+      { no: 12, name: "Ткаченко Анна", birthYear: 2022, result: "21,12", bib: 112 },
+      { no: 13, name: "Амелін Лев", birthYear: 2023, result: "28,2", bib: 113 },
+      { no: 14, name: "Бецький Давід", birthYear: 2022, result: "26,2", bib: 114 },
+    ],
+  },
+  {
+    id: "2020-2021",
+    label: "2020–2021",
+    event: "Біг на 100 м (50 м гладкий + 50 м з бар'єрами)",
+    showBirthYear: true,
+    rows: [
+      { no: 1, name: "Орнанджі Лев", birthYear: 2020, result: "23,2", bib: 201 },
+      { no: 2, name: "Найбич Захар", birthYear: 2020, result: null, bib: 202 },
+      { no: 3, name: "Мілана Голубенко", birthYear: 2020, result: "20,4", bib: 203 },
+      { no: 4, name: "Аріана Кацура", birthYear: 2020, result: "20,14", bib: 204 },
+      { no: 5, name: "Магаляс Софія", birthYear: 2021, result: "33,3", bib: 205 },
+      { no: 6, name: "Олександр Гаразда", birthYear: 2020, result: "24,9", bib: 206 },
+      { no: 7, name: "Моренко Єва", birthYear: 2020, result: "19,7", bib: 207 },
+      { no: 8, name: "Магденко Артем", birthYear: 2020, result: "28,9", bib: 208 },
+      { no: 9, name: "Ріпка Роман", birthYear: 2020, result: "29,2", bib: 209 },
+      { no: 10, name: "Дульша Артем", birthYear: 2021, result: "27,1", bib: 210 },
+      { no: 11, name: "Краснопольський Матвій", birthYear: 2021, result: "27,1", bib: 211 },
+      { no: 12, name: "Бородін Дмитро", birthYear: 2021, result: "30,6", bib: 212 },
+      { no: 13, name: "Баговик Ксенія", birthYear: 2020, result: "23,5", bib: 213 },
+      { no: 14, name: "Яценюк Ян", birthYear: 2020, result: "24,2", bib: 214 },
+      { no: 15, name: "Путіліна Софія", birthYear: 2020, result: "25,7", bib: 215 },
+      { no: 16, name: "Ростислав Коваль", birthYear: 2020, result: "21,7", bib: 216 },
+      { no: 17, name: "Аглая Красняк", birthYear: 2021, result: "31,2", bib: 217 },
+      { no: 18, name: "Конєв Матвій", birthYear: 2020, result: "22,3", bib: 218 },
+      { no: 19, name: "Владислав Кулик", birthYear: 2021, result: "24,7", bib: 219 },
+      { no: 20, name: "Харитонов Герман", birthYear: 2020, result: null, bib: 220 },
+      { no: 21, name: "Анна Скидіна", birthYear: 2020, result: "23,9", bib: 221 },
+      { no: 22, name: "Кирило Возняк", birthYear: 2020, result: "21,7", bib: 222 },
+      { no: 23, name: "Ластовський Макар", birthYear: 2021, result: "29,5", bib: 223 },
+      { no: 24, name: "Ярмоленко Максим", birthYear: 2021, result: "21,6", bib: 224 },
+      { no: 25, name: "Янченко Кіра", birthYear: 2020, result: "28,4", bib: 225 },
+      { no: 26, name: "Новікова Діана", birthYear: 2021, result: "24,4", bib: 226 },
+      { no: 27, name: "Кушнір Фелікс", birthYear: 2020, result: "23,2", bib: 227 },
+      { no: 28, name: "Габрук Дамір", birthYear: 2021, result: "25,5", bib: 228 },
+      { no: 29, name: "Майстренко Матвій", birthYear: 2020, result: "23,5", bib: 229 },
+      { no: 30, name: "Софія Пивоварова", birthYear: 2020, result: "29,9", bib: 230 },
+    ],
+  },
+  {
+    id: "2018-2019",
+    label: "2018–2019",
+    event: "Біг на 150 м (100 м гладкий + 50 м з перешкодами)",
+    showBirthYear: true,
+    rows: [
+      { no: 1, name: "Тараненко Захар", birthYear: 2019, result: "36,4", bib: 301 },
+      { no: 2, name: "Юнаш Іван", birthYear: 2018, result: null, bib: 302 },
+      { no: 3, name: "Бецький Деніель", birthYear: 2018, result: "31,9", bib: 303 },
+      { no: 4, name: "Ждановська Валерія", birthYear: 2019, result: "35,4", bib: 304 },
+      { no: 5, name: "Курочка Матвій", birthYear: 2018, result: "49,3", bib: 305 },
+      { no: 6, name: "Щедро Аліса", birthYear: 2019, result: "40,0", bib: 306 },
+      { no: 7, name: "Мілана Вовкодав", birthYear: 2019, result: "38,6", bib: 307 },
+      { no: 8, name: "Мрігіль Іларія", birthYear: 2019, result: "34,1", bib: 308 },
+      { no: 9, name: "Олексій Терпак", birthYear: 2019, result: null, bib: 309 },
+      { no: 10, name: "Грищенко Віра", birthYear: 2019, result: "34,4", bib: 310 },
+      { no: 11, name: "Дячук Кіра", birthYear: 2018, result: "30,9", bib: 311 },
+      { no: 12, name: "Кирило Кабанов", birthYear: 2018, result: null, bib: 312 },
+      { no: 13, name: "Тимченко Злата", birthYear: 2019, result: "32,9", bib: 313 },
+      { no: 14, name: "Артем Льовушкін", birthYear: 2018, result: "29,8", bib: 314 },
+      { no: 15, name: "Марія Івасюк", birthYear: 2018, result: "29", bib: 315 },
+      { no: 16, name: "Турко Нікіта", birthYear: 2018, result: "36,3", bib: 316 },
+      { no: 17, name: "Логінова Мілана", birthYear: 2019, result: "31,06", bib: 317 },
+      { no: 18, name: "Егор Пенчук", birthYear: 2018, result: "43,02", bib: 318 },
+      { no: 19, name: "Акімова Анастасія", birthYear: 2019, result: "42,8", bib: 319 },
+      { no: 20, name: "Бажко Єва", birthYear: 2019, result: "31,4", bib: 320 },
+      { no: 21, name: "Пелагія Єремченко", birthYear: 2019, result: "35,13", bib: 321 },
+      { no: 22, name: "Олександр Мороз", birthYear: 2018, result: "33,2", bib: 322 },
+      { no: 23, name: "Васіна Катерина", birthYear: 2019, result: "30,9", bib: 323 },
+      { no: 24, name: "Аліса Овсієнко", birthYear: 2019, result: "44,6", bib: 324 },
+      { no: 25, name: "Іванюк Еліна", birthYear: 2019, result: "30,2", bib: 325 },
+      { no: 26, name: "Дроженко Єва", birthYear: 2019, result: "40,4", bib: 326 },
+      { no: 27, name: "Дуленко Олександра", birthYear: 2018, result: "34,1", bib: 327 },
+      { no: 28, name: "Дзига Артем", birthYear: 2018, result: null, bib: 328 },
+      { no: 29, name: "Кандаурова Катерина", birthYear: 2018, result: "34,9", bib: 329 },
+      { no: 30, name: "Якименко Натан", birthYear: 2019, result: "33,3", bib: 330 },
+      { no: 31, name: "Дан Роман", birthYear: 2019, result: "38,8", bib: 331 },
+      { no: 32, name: "Билаенко Дамир", birthYear: 2018, result: "34,0", bib: 332 },
+      { no: 33, name: "Каракай Данило", birthYear: 2019, result: "36,5", bib: 333 },
+      { no: 34, name: "Михайло Головань", birthYear: 2018, result: "35,9", bib: 334 },
+      { no: 36, name: "Піпа Поліна", birthYear: 2018, result: "30,4", bib: 336 },
+      { no: 37, name: "Тарас Сафенков", birthYear: 2018, result: "27,8", bib: 337 },
+    ],
+  },
+  {
+    id: "2016-2017",
+    label: "2016–2017",
+    event: "Біг на 200 м (150 м гладкий + 50 м з перешкодами)",
+    showBirthYear: true,
+    rows: [
+      { no: 1, name: "Потапенко Іван", birthYear: 2016, result: "27,6", bib: 401 },
+      { no: 2, name: "Баргамон Ірина", birthYear: 2016, result: "30,8", bib: 402 },
+      { no: 3, name: "Ситник В'ячеслав", birthYear: 2016, result: "29,7", bib: 403 },
+      { no: 4, name: "Андрущенко Іван", birthYear: 2016, result: "31,3", bib: 404 },
+      { no: 5, name: "Григор'єва Поліна", birthYear: 2017, result: "31,7", bib: 405 },
+      { no: 6, name: "Дерепа Савелій", birthYear: 2016, result: "27,5", bib: 406 },
+      { no: 7, name: "Краснопольський Нікіта", birthYear: 2017, result: "32,3", bib: 407 },
+      { no: 8, name: "Матюхова Кіра", birthYear: 2016, result: "23,3", bib: 408 },
+      { no: 9, name: "Вознюк Софія", birthYear: 2016, result: "31,7", bib: 409 },
+      { no: 10, name: "Артем Бойко", birthYear: 2016, result: "33,7", bib: 410 },
+      { no: 11, name: "Стоцький Максим", birthYear: 2017, result: "36,1", bib: 411 },
+      { no: 12, name: "Тихон Щербатюк", birthYear: 2016, result: "26,6", bib: 412 },
+      { no: 13, name: "Ковальчук Софія", birthYear: 2016, result: "34,5", bib: 413 },
+      { no: 14, name: "Кирил Балюк", birthYear: 2016, result: "24,6", bib: 415 },
+      { no: 15, name: "Вишнивецький Ярослав", birthYear: 2017, result: "30,3", bib: 416 },
+      { no: 16, name: "Єлизавета Казачинська", birthYear: 2017, result: "40,8", bib: 417 },
+      { no: 17, name: "Каюн Олег", birthYear: 2017, result: "36,1", bib: 418 },
+      { no: 18, name: "Сабіна Джабієва", birthYear: 2017, result: "34,5", bib: 419 },
+      { no: 19, name: "Коваль Артем", birthYear: 2016, result: null, bib: 420 },
+      { no: 20, name: "Терещенко Богдан", birthYear: 2017, result: "27,8", bib: 421 },
+      { no: 21, name: "Павлова Анна", birthYear: 2017, result: "30,7", bib: 422 },
+      { no: 22, name: "Федотов Павло", birthYear: 2017, result: "39,0", bib: 423 },
+      { no: 23, name: "Алексеєва Поліна", birthYear: 2016, result: null, bib: 424 },
+      { no: 24, name: "Клочко Мирослав", birthYear: 2016, result: "31,8", bib: 425 },
+      { no: 25, name: "Лобанов Евгений", birthYear: 2016, result: "31,2", bib: 426 },
+      { no: 26, name: "Еліна Переверзєва", birthYear: 2017, result: "42,2", bib: 427 },
+      { no: 27, name: "Ксензовець Владислава", birthYear: 2017, result: "39,5", bib: 429 },
+      { no: 28, name: "Убилава Олівія", birthYear: 2017, result: "31,3", bib: 428 },
+      { no: 29, name: "Яровенко Мілана", birthYear: 2016, result: "31,05", bib: 431 },
+    ],
+  },
+  {
+    id: "2014-2015",
+    label: "2014–2015",
+    event: "Біг на 200 м (150 м гладкий + 50 м з перешкодами)",
+    showBirthYear: true,
+    rows: [
+      { no: 1, name: "Скидіна Аріна", birthYear: 2015, result: "36", bib: 501 },
+      { no: 2, name: "Найбич Макар", birthYear: 2015, result: "40,3", bib: 502 },
+      { no: 3, name: "Артамонов Єлисей", birthYear: 2014, result: "34,2", bib: 503 },
+      { no: 4, name: "Струк Нона", birthYear: 2014, result: "35,3", bib: 504 },
+      { no: 5, name: "Албул Тетяна", birthYear: 2015, result: "37,8", bib: 505 },
+      { no: 6, name: "Албул Надія", birthYear: 2015, result: "32,9", bib: 506 },
+      { no: 7, name: "Вишнивецька Діана Максимівна", birthYear: 2014, result: "37,6", bib: 507 },
+      { no: 8, name: "Харитонова Меліса", birthYear: 2015, result: "37,5", bib: 508 },
+      { no: 9, name: "Корж Софія", birthYear: 2015, result: "38,7", bib: 509 },
+      { no: 10, name: "Павлюченко Арінна", birthYear: 2015, result: "41,02", bib: 510 },
+      { no: 11, name: "Дуленко Вероніка", birthYear: 2014, result: "37", bib: 511 },
+      { no: 12, name: "Стахієва Поліна", birthYear: 2014, result: "43,7", bib: 512 },
+      { no: 13, name: "Казанцев Михайло", birthYear: 2014, result: "36,3", bib: 513 },
+      { no: 14, name: "Якименко Іларія", birthYear: 2015, result: "42,03", bib: 514 },
+      { no: 15, name: "Зиляк Софія", birthYear: 2014, result: null, bib: 515 },
+      { no: 16, name: "Мирослава Сафенкова", birthYear: 2015, result: "47,1", bib: 516 },
+      { no: 17, name: "Бояркіна Віра", birthYear: 2014, result: "35,5", bib: 517 },
+      { no: 18, name: "Нікітюк Володимир", birthYear: 2014, result: null, bib: 518 },
+      { no: 19, name: "Кошулько Ольга", birthYear: 2014, result: "35,9", bib: 519 },
+      { no: 20, name: "Сільченко Кіріана", birthYear: 2014, result: "39,1", bib: 520 },
+      { no: 21, name: "Мильніков Тимофій", birthYear: 2014, result: "36,0", bib: 521 },
+      { no: 22, name: "Руденко Матвій", birthYear: 2014, result: "39", bib: 522 },
+    ],
+  },
+  {
+    id: "disability",
+    label: "Діти з інвалідністю",
+    event: "Біг на 60 м",
+    showBirthYear: false,
+    rows: [
+      { no: 1, name: "Чорний Михайло", result: "13,75", bib: 601 },
+      { no: 2, name: "Лучнікова-Горбачова Даріна", result: "11", bib: 602 },
+      { no: 3, name: "Булава Олександр", result: "9,1", bib: 603 },
+      { no: 4, name: "Ігнатенко Микита", result: "11,0", bib: 604 },
+      { no: 5, name: "Коршунович Назар", result: null, bib: 605 },
+      { no: 6, name: "Салтан Ангеліна", result: null, bib: 606 },
+      { no: 7, name: "Бурганов Максим", result: "14,62", bib: 607 },
+      { no: 8, name: "Мойсеєнко Софія", result: "11,7", bib: 608 },
+      { no: 9, name: "Василечко Лев", result: "11,39", bib: 609 },
+      { no: 10, name: "Ляхов Ярослав", result: "12,38", bib: 610 },
+      { no: 11, name: "Білоцерківець Нікіта", result: "12,38", bib: 611 },
+      { no: 12, name: "Грошкова Уляна", result: "13,35", bib: 612 },
+      { no: 13, name: "Чумаченко Павло", result: "11,95", bib: 613 },
+      { no: 14, name: "Крашеніннікова Єлизавета", result: "13,47", bib: 614 },
+      { no: 15, name: "Агапов Назар", result: "11,39", bib: 615 },
+      { no: 16, name: "Агапова Катерина", result: "12,06", bib: 616 },
+      { no: 17, name: "Маклакова Клавдія", result: "11,8", bib: 617 },
+      { no: 18, name: "Дмитрієва Аліса", result: "12,3", bib: 618 },
+      { no: 19, name: "Дмитрієва Ірина", result: null, bib: 619 },
+    ],
+  },
+];

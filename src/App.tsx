@@ -10,6 +10,7 @@ import RegistrationStatusPage from "./pages/RegistrationStatusPage";
 import OrganizersPage from "./pages/OrganizersPage";
 import OrganizerPrintListsPage from "./pages/OrganizerPrintListsPage";
 import RegistrationStatsPage from "./pages/RegistrationStatsPage";
+import ResultsPage from "./pages/ResultsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/organizers" element={<OrganizersPage />} />
           <Route path="/organizers/print-lists" element={<OrganizerPrintListsPage />} />
           <Route path="/stats" element={<RegistrationStatsPage />} />
+          <Route path="/results" element={<ResultsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
