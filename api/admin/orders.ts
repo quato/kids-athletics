@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { AGE_GROUP_SQL, isKnownAgeGroup } from "../_lib/age-groups.js";
+import { childrenLimitFor, EDITION_REGISTRATION_COUNT_SQL, resolveEdition } from "../_lib/edition.js";
 import { json, methodNotAllowed, serverError } from "../_lib/http.js";
 
 function authenticate(req: VercelRequest): boolean {
@@ -44,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 401, { error: "Unauthorized" });
   }
 
-  const CHILDREN_LIMIT = 152;
+  const edition = resolveEdition(req.query.edition);
 
   try {
     if (req.query.format === "print-lists") {
@@ -61,12 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           r.start_number
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
-        WHERE r.is_present = true
+        JOIN events e ON e.id = r.event_id
+        WHERE e.edition = $1
+          AND r.is_present = true
           AND r.start_number IS NOT NULL
           AND r.birth_year > 0
           AND o.status = 'paid'
         ORDER BY age_group, r.start_number ASC
-      `);
+      `, [edition]);
 
       const groups: Record<string, Array<{ childName: string; birthYear: number; startNumber: number }>> = {};
 
@@ -108,14 +111,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               'startNumber', r.start_number,
               'isPresent',   r.is_present
             ) ORDER BY r.id
-          ) FILTER (WHERE r.id IS NOT NULL) AS children
+          ) FILTER (WHERE r.id IS NOT NULL AND e.edition = $1) AS children
         FROM orders o
         LEFT JOIN registrations r ON r.order_id = o.id
-        LEFT JOIN events e ON e.id = r.event_id
+        LEFT JOIN events e ON e.id = r.event_id AND e.edition = $1
+        WHERE EXISTS (
+          SELECT 1
+          FROM registrations r2
+          JOIN events e2 ON e2.id = r2.event_id
+          WHERE r2.order_id = o.id AND e2.edition = $1
+        )
         GROUP BY o.id
         ORDER BY o.created_at DESC
-      `),
-      pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM registrations"),
+      `, [edition]),
+      pool.query<{ count: string }>(EDITION_REGISTRATION_COUNT_SQL, [edition]),
     ]);
 
     if (req.query.format === "csv") {
@@ -203,12 +212,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }));
 
     const registeredChildren = parseInt(childrenCountResult.rows[0].count, 10);
-    const remainingPlaces = Math.max(CHILDREN_LIMIT - registeredChildren, 0);
+    const childrenLimit = childrenLimitFor(edition);
+    const remainingPlaces = Math.max(childrenLimit - registeredChildren, 0);
 
     return json(res, 200, {
       orders,
+      edition,
       registeredChildren,
-      childrenLimit: CHILDREN_LIMIT,
+      childrenLimit,
       remainingPlaces,
     });
   } catch (err) {

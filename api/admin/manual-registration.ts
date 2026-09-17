@@ -3,6 +3,7 @@ import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, notFound, serverError } from "../_lib/http.js";
 import { sendTelegramMessage } from "../_lib/telegram.js";
 import { findDuplicates } from "../_lib/duplicates.js";
+import { ACTIVE_EDITION } from "../_lib/edition.js";
 
 function authenticate(req: VercelRequest): boolean {
   const expectedPassword = process.env.ORGANIZER_PASSWORD;
@@ -73,8 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await client.query("BEGIN");
 
     const eventIds = [...new Set(children.map((c) => c.eventId))];
-    const eventResult = await client.query<{ id: number; name: string; fee_amount: string }>(
-      `SELECT id, name, fee_amount FROM events WHERE id = ANY($1::int[])`,
+    const eventResult = await client.query<{ id: number; name: string; fee_amount: string; edition: string }>(
+      `SELECT id, name, fee_amount, edition FROM events WHERE id = ANY($1::int[])`,
       [eventIds],
     );
     const eventMap = new Map(
@@ -86,6 +87,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await client.query("ROLLBACK");
         return notFound(res, `Event with id ${child.eventId} not found`);
       }
+    }
+
+    // Manual registrations only ever apply to the fest that is currently open.
+    const archivedEvent = eventResult.rows.find((row) => row.edition !== ACTIVE_EDITION);
+    if (archivedEvent) {
+      await client.query("ROLLBACK");
+      return json(res, 409, {
+        error: `Дисципліна «${archivedEvent.name}» належить до архівного фесту (${archivedEvent.edition}). Реєструвати можна лише на активний фест.`,
+      });
     }
 
     const totalAmount = children.reduce(

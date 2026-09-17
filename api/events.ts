@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "./_lib/db.js";
+import { ACTIVE_EDITION, CHILDREN_LIMIT, EDITION_REGISTRATION_COUNT_SQL } from "./_lib/edition.js";
 import { json, methodNotAllowed, serverError } from "./_lib/http.js";
 
 interface EventRow {
@@ -15,17 +16,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return methodNotAllowed(res, ["GET"]);
   }
 
-  const CHILDREN_LIMIT = 152;
-
   try {
     const [eventsResult, countResult] = await Promise.all([
       pool.query<EventRow>(
         `SELECT id, name, date, fee_amount, registration_deadline
          FROM events
-         WHERE registration_deadline > now()
+         WHERE edition = $1 AND registration_deadline > now()
          ORDER BY date ASC`,
+        [ACTIVE_EDITION],
       ),
-      pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM registrations"),
+      pool.query<{ count: string }>(EDITION_REGISTRATION_COUNT_SQL, [ACTIVE_EDITION]),
     ]);
 
     const events = eventsResult.rows.map((row) => ({

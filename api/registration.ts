@@ -4,6 +4,7 @@ import { json, methodNotAllowed, badRequest, notFound, serverError } from "./_li
 import { sendRegistrationEmail } from "./_lib/email.js";
 import { sendTelegramMessage } from "./_lib/telegram.js";
 import { findDuplicates } from "./_lib/duplicates.js";
+import { ACTIVE_EDITION, CHILDREN_LIMIT, EDITION_REGISTRATION_COUNT_SQL } from "./_lib/edition.js";
 
 interface ChildInput {
   childName: string;
@@ -67,9 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { parentName, phone, email, children } = req.body as RegistrationBody;
 
-  // Enforce 140-children capacity limit
-  const CHILDREN_LIMIT = 152;
-  const capResult = await pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM registrations");
+  const capResult = await pool.query<{ count: string }>(EDITION_REGISTRATION_COUNT_SQL, [ACTIVE_EDITION]);
   const registeredChildren = parseInt(capResult.rows[0].count, 10);
   if (registeredChildren + children.length > CHILDREN_LIMIT) {
     return json(res, 409, {
@@ -84,8 +83,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Fetch fee_amount for every requested event, in one query
     const eventIds = [...new Set(children.map((c) => c.eventId))];
     const eventResult = await client.query<{ id: number; name: string; fee_amount: string }>(
-      `SELECT id, name, fee_amount FROM events WHERE id = ANY($1::int[])`,
-      [eventIds],
+      `SELECT id, name, fee_amount FROM events WHERE id = ANY($1::int[]) AND edition = $2`,
+      [eventIds, ACTIVE_EDITION],
     );
 
     const eventMap = new Map(

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "./_lib/db.js";
 import { AGE_GROUP_SQL } from "./_lib/age-groups.js";
+import { ACTIVE_EDITION, EDITION_REGISTRATION_COUNT_SQL } from "./_lib/edition.js";
 import { json, methodNotAllowed, serverError } from "./_lib/http.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -15,12 +16,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         SELECT ${AGE_GROUP_SQL} AS age_group, COUNT(*) AS count
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
-        WHERE r.is_present = true
+        JOIN events e ON e.id = r.event_id
+        WHERE e.edition = $1
+          AND r.is_present = true
           AND r.start_number IS NOT NULL
           AND r.birth_year > 0
           AND o.status = 'paid'
         GROUP BY age_group
-      `),
+      `, [ACTIVE_EDITION]),
       // children with a start number (present + start_number set, paid orders only)
       pool.query<{ age_group: string; child_name: string; start_number: number }>(`
         SELECT
@@ -29,14 +32,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           r.start_number
         FROM registrations r
         JOIN orders o ON o.id = r.order_id
-        WHERE r.is_present = true
+        JOIN events e ON e.id = r.event_id
+        WHERE e.edition = $1
+          AND r.is_present = true
           AND r.start_number IS NOT NULL
           AND r.birth_year > 0
           AND o.status = 'paid'
         ORDER BY r.start_number ASC
-      `),
-      // total children across all orders (all statuses)
-      pool.query<{ count: string }>(`SELECT COUNT(*) AS count FROM registrations`),
+      `, [ACTIVE_EDITION]),
+      pool.query<{ count: string }>(EDITION_REGISTRATION_COUNT_SQL, [ACTIVE_EDITION]),
     ]);
 
     const counts: Record<string, number> = {};
