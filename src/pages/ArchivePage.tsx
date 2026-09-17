@@ -23,7 +23,7 @@ const ArchivePage = () => {
           Архів фестивалів
         </h1>
         <p className="text-muted-foreground mb-10">
-          Минулі видання Kids Athletics FEST зі програмою та результатами.
+          Минулі видання Kids Athletics FEST з програмою та результатами.
         </p>
 
         {past.length === 0 ? (
