@@ -29,8 +29,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       name: string;
       fee_amount: string;
       edition: string;
+      audience: string;
     }>(
-      `SELECT id, name, fee_amount, edition FROM events WHERE edition = $1 ORDER BY id ASC`,
+      `SELECT id, name, fee_amount, edition, audience FROM events WHERE edition = $1 ORDER BY id ASC`,
       [edition],
     );
 
@@ -39,6 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       name: row.name,
       feeAmount: parseFloat(row.fee_amount),
       edition: row.edition,
+      audience: row.audience === "adults" ? "adults" : "children",
     }));
 
     return json(res, 200, { events });

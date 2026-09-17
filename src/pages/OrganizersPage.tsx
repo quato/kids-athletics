@@ -632,11 +632,13 @@ interface ChildRow {
 function ManualRegistrationModal({
   token,
   events,
+  adultMinAge,
   onClose,
   onSuccess,
 }: {
   token: string;
   events: AdminEvent[];
+  adultMinAge: number;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -657,8 +659,21 @@ function ManualRegistrationModal({
   const removeChild = (i: number) =>
     setChildren((prev) => prev.filter((_, idx) => idx !== i));
 
+  const isAdultEvent = (eventId: number) =>
+    events.find((e) => e.id === eventId)?.audience === "adults";
+  const hasAdultEvents = events.some((e) => e.audience === "adults");
+  const latestAdultBirthYear = new Date().getFullYear() - adultMinAge;
+
   const updateChild = (i: number, field: keyof ChildRow, value: string | number | boolean) =>
-    setChildren((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+    setChildren((prev) =>
+      prev.map((c, idx) => {
+        if (idx !== i) return c;
+        const next = { ...c, [field]: value };
+        // The special-needs group belongs to the children's programme only.
+        if (field === "eventId" && isAdultEvent(Number(value))) next.isDisabled = false;
+        return next;
+      }),
+    );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -736,12 +751,16 @@ function ManualRegistrationModal({
 
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Діти ({children.length})
+              {hasAdultEvents ? "Учасники" : "Діти"} ({children.length})
             </p>
-            {children.map((child, i) => (
+            {children.map((child, i) => {
+              const adultRow = isAdultEvent(child.eventId);
+              return (
               <div key={i} className="rounded-xl border border-border p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-semibold">Дитина {i + 1}</span>
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    {adultRow ? "Дорослий" : "Дитина"} {i + 1}
+                  </span>
                   {children.length > 1 && (
                     <button
                       type="button"
@@ -756,7 +775,7 @@ function ManualRegistrationModal({
                   <Input
                     value={child.childName}
                     onChange={(e) => updateChild(i, "childName", e.target.value)}
-                    placeholder="Ім'я дитини"
+                    placeholder={adultRow ? "Ім'я учасника" : "Ім'я дитини"}
                     required
                   />
                   {child.isDisabled ? (
@@ -769,21 +788,23 @@ function ManualRegistrationModal({
                       onChange={(e) => updateChild(i, "birthYear", e.target.value)}
                       placeholder="Рік народж. *"
                       type="number"
-                      min={2014}
-                      max={2023}
+                      min={adultRow ? 1930 : 2014}
+                      max={adultRow ? latestAdultBirthYear : 2023}
                       required
                     />
                   )}
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-                  <input
-                    type="checkbox"
-                    checked={child.isDisabled}
-                    onChange={(e) => updateChild(i, "isDisabled", e.target.checked)}
-                    className="accent-primary w-4 h-4"
-                  />
-                  <span className="text-sm text-muted-foreground">Інвалід / з особливими потребами</span>
-                </label>
+                {!adultRow && (
+                  <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                    <input
+                      type="checkbox"
+                      checked={child.isDisabled}
+                      onChange={(e) => updateChild(i, "isDisabled", e.target.checked)}
+                      className="accent-primary w-4 h-4"
+                    />
+                    <span className="text-sm text-muted-foreground">Інвалід / з особливими потребами</span>
+                  </label>
+                )}
                 <select
                   value={child.eventId}
                   onChange={(e) => updateChild(i, "eventId", parseInt(e.target.value, 10))}
@@ -797,14 +818,15 @@ function ManualRegistrationModal({
                   ))}
                 </select>
               </div>
-            ))}
+              );
+            })}
             <button
               type="button"
               onClick={addChild}
               className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary border border-dashed border-border rounded-xl py-2 transition-colors"
             >
               <PlusCircle className="w-4 h-4" />
-              Додати ще дитину
+              {hasAdultEvents ? "Додати ще учасника" : "Додати ще дитину"}
             </button>
           </div>
 
@@ -1478,6 +1500,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
         <ManualRegistrationModal
           token={token}
           events={events}
+          adultMinAge={selectedEdition.adultRace?.minAge ?? 18}
           onClose={() => setShowModal(false)}
           onSuccess={handleRegistrationSuccess}
         />

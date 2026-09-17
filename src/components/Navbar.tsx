@@ -45,7 +45,8 @@ const Navbar = () => {
           {edition.shortName} <span className="text-accent">{edition.accentWord}</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
+        {/* lg, not md: the link row plus the CTA no longer fits at tablet widths. */}
+        <div className="hidden lg:flex items-center gap-6 whitespace-nowrap">
           {links.map((l) => (
             <a
               key={l.href}
@@ -91,14 +92,14 @@ const Navbar = () => {
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className={`md:hidden ${solid ? "text-foreground" : "text-primary-foreground"}`}
+          className={`lg:hidden ${solid ? "text-foreground" : "text-primary-foreground"}`}
         >
           {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
       {menuOpen && (
-        <div className="md:hidden bg-card/95 backdrop-blur-md border-t border-border px-4 py-4 space-y-3">
+        <div className="lg:hidden bg-card/95 backdrop-blur-md border-t border-border px-4 py-4 space-y-3">
           {links.map((l) => (
             <a
               key={l.href}

@@ -49,6 +49,7 @@ export interface AdminEvent {
   name: string;
   feeAmount: number;
   edition: string;
+  audience: "children" | "adults";
 }
 
 export interface ManualRegistrationInput {
