@@ -25,7 +25,8 @@ dist-ssr
 
 .vercel
 
-results/
+# Local photo dumps from the fest, not the src/editions/results data
+/results/
 
 # Local secrets (DATABASE_URL, ORGANIZER_PASSWORD, Monobank tokens)
 .env
