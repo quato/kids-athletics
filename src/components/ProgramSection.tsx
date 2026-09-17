@@ -18,7 +18,7 @@ const ProgramSection = () => {
               key={d.id}
               className="bg-card rounded-2xl shadow-sm hover:shadow-lg transition-all hover:scale-105 p-5 flex flex-col items-center text-center"
             >
-              <img src={d.icon} alt={d.name} className="w-32 h-32 md:w-40 md:h-40 object-contain mb-4" />
+              <img src={d.icon} alt={d.name} className="object-contain mb-4" />
               <span className="font-heading font-bold text-sm text-foreground">{d.name}</span>
             </div>
           ))}
