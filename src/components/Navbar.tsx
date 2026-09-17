@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { isFestOver } from "@/lib/registration-open";
 
 const hashLinks = [
   { href: "#info", label: "Про фест" },
@@ -16,6 +17,7 @@ const Navbar = () => {
   // On inner pages (non-homepage) always use solid navbar
   const isHome = pathname === "/";
   const solid = !isHome || scrolled;
+  const festOver = isFestOver();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -55,12 +57,18 @@ const Navbar = () => {
           >
             Результати
           </Link>
-          <Link
-            to="/registration"
-            className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
-          >
-            Реєстрація
-          </Link>
+          {festOver ? (
+            <span className="px-4 py-1.5 rounded-lg bg-muted text-muted-foreground text-sm font-bold cursor-not-allowed">
+              Реєстрація закрита
+            </span>
+          ) : (
+            <Link
+              to="/registration"
+              className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
+            >
+              Реєстрація
+            </Link>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -92,13 +100,19 @@ const Navbar = () => {
           >
             Результати
           </Link>
-          <Link
-            to="/registration"
-            onClick={() => setMenuOpen(false)}
-            className="block text-primary font-bold hover:text-primary/80 transition-colors"
-          >
-            Реєстрація
-          </Link>
+          {festOver ? (
+            <span className="block text-muted-foreground font-medium cursor-not-allowed">
+              Реєстрація закрита
+            </span>
+          ) : (
+            <Link
+              to="/registration"
+              onClick={() => setMenuOpen(false)}
+              className="block text-primary font-bold hover:text-primary/80 transition-colors"
+            >
+              Реєстрація
+            </Link>
+          )}
         </div>
       )}
     </nav>

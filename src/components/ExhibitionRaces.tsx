@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
+import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
 
 const races = [
   { age: "Інваліди", event: "Біг по прямій 60 м" },
@@ -11,7 +11,7 @@ const races = [
 ];
 
 const ExhibitionRaces = () => {
-  const registrationOpen = isRegistrationOpen();
+  const festOver = isFestOver();
 
   return (
     <section className="section-padding bg-muted">
@@ -46,15 +46,22 @@ const ExhibitionRaces = () => {
           </table>
         </div>
 
-          <div className={`border-l-4 rounded-xl p-4 mb-6 ${registrationOpen ? "bg-success/10 border-success" : "bg-muted border-muted-foreground/30"}`}>
-            <p className="text-foreground font-semibold text-sm">
-              {registrationOpen ? (
-                <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
-              ) : (
-                <>Реєстрація на виставкові забіги відкриється <span className="text-primary">{REGISTRATION_OPEN_LABEL}</span>.</>
-              )}
-            </p>
-            {registrationOpen && (
+        <div className="border-l-4 rounded-xl p-4 mb-6 bg-muted border-muted-foreground/30">
+          <p className="text-foreground font-semibold text-sm">
+            {festOver ? (
+              <>{FEST_OVER_MESSAGE}</>
+            ) : (
+              <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
+            )}
+          </p>
+          {festOver ? (
+            <Link
+              to="/results?tab=individual"
+              className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
+            >
+              Переглянути результати
+            </Link>
+          ) : (
             <Link
               to="/registration"
               className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"

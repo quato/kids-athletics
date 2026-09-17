@@ -1,11 +1,8 @@
-import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
-
-const TEAM_REGISTRATION_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSc_3zxVmhIOG7egWtnjBXDTwgRPrdRD8wj3ryfbqh2sqiOGxA/viewform?usp=header";
-const TEAM_REGISTRATION_CLOSED = true;
+import { Link } from "react-router-dom";
+import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
 
 const TeamSection = () => {
-  const registrationOpen = isRegistrationOpen();
+  const festOver = isFestOver();
 
   return (
     <section id="team" className="section-padding bg-muted">
@@ -30,43 +27,28 @@ const TeamSection = () => {
 
           <div
             className={`border-l-4 rounded-xl p-4 mb-6 ${
-              TEAM_REGISTRATION_CLOSED
-                ? "bg-destructive/10 border-destructive"
-                : registrationOpen
-                ? "bg-success/10 border-success"
-                : "bg-muted border-muted-foreground/30"
+              festOver ? "bg-muted border-muted-foreground/30" : "bg-destructive/10 border-destructive"
             }`}
           >
             <p className="text-foreground font-semibold text-sm">
-              {TEAM_REGISTRATION_CLOSED ? (
-                <>Реєстрація на командну першість <span className="text-destructive">закрита</span> — набрано 10 команд.</>
-              ) : registrationOpen ? (
-                <>Реєстрація на командні забіги <span className="text-success">відкрита</span>!</>
+              {festOver ? (
+                <>{FEST_OVER_MESSAGE}</>
               ) : (
-                <>Реєстрація на командні забіги відкриється <span className="text-primary">{REGISTRATION_OPEN_LABEL}</span>.</>
+                <>
+                  Реєстрація на командну першість{" "}
+                  <span className="text-destructive">закрита</span> — набрано 10 команд.
+                </>
               )}
             </p>
-            {registrationOpen && !TEAM_REGISTRATION_CLOSED && (
-              <a
-                href={TEAM_REGISTRATION_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
-              >
-                Зареєструвати команду
-              </a>
-            )}
           </div>
 
           <div className="text-center">
-            <a
-              href="https://docs.google.com/spreadsheets/d/1tkSU3Vx6aTYudozzGhJtx_ALBgD97r2URsjnAirldlY/edit?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/results?tab=teams"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
             >
               🏆 Результати командної першості
-            </a>
+            </Link>
           </div>
         </div>
       </div>

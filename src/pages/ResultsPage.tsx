@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Trophy, Medal } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -204,7 +205,9 @@ function IndividualRunsTab() {
 }
 
 const ResultsPage = () => {
-  const [tab, setTab] = useState<Tab>("teams");
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") === "individual" ? "individual" : "teams";
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

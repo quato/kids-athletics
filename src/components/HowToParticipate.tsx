@@ -1,12 +1,13 @@
 import { PenSquare, CreditCard, Footprints } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
 
 const steps = [
   {
     icon: PenSquare,
     title: "Крок 1",
     description: "Заповніть реєстраційну форму",
-    action: { label: "Зареєструватися", to: "/registration" },
+    action: { label: "Зареєструватися" },
   },
   {
     icon: CreditCard,
@@ -22,6 +23,8 @@ const steps = [
 ];
 
 const HowToParticipate = () => {
+  const festOver = isFestOver();
+
   return (
     <section className="section-padding bg-background">
       <div className="container mx-auto max-w-5xl">
@@ -41,12 +44,18 @@ const HowToParticipate = () => {
                 <span className="text-2xl font-heading font-black text-secondary">{step.price}</span>
               )}
               {step.action && (
-                <Link
-                  to={step.action.to}
-                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
-                >
-                  {step.action.label}
-                </Link>
+                festOver ? (
+                  <span className="px-4 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-bold cursor-not-allowed">
+                    {step.action.label}
+                  </span>
+                ) : (
+                  <Link
+                    to="/registration"
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
+                  >
+                    {step.action.label}
+                  </Link>
+                )
               )}
             </div>
           ))}
@@ -55,19 +64,19 @@ const HowToParticipate = () => {
         <div className="max-w-xl mx-auto bg-accent/20 border-l-4 border-accent rounded-xl p-5 mb-8">
           <p className="font-bold text-foreground mb-1">⚠️ Важливо!</p>
           <p className="text-muted-foreground text-sm">
-            Реєстрація буде відкрита до 20 травня 2026 року, за наявності місць. Загальний ліміт — 200 осіб.
+            {festOver
+              ? FEST_OVER_MESSAGE
+              : "Реєстрація буде відкрита до 20 травня 2026 року, за наявності місць. Загальний ліміт — 200 осіб."}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="https://docs.google.com/spreadsheets/d/1wufp57c-Vbxiu1nR36Yvx7CGlOyph8EJH6VZRmei_yc/edit?usp=sharing"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/results?tab=individual"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
           >
             🏆 Результати виставкових забігів
-          </a>
+          </Link>
         </div>
       </div>
     </section>

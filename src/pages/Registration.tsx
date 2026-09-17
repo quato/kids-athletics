@@ -24,7 +24,7 @@ import { fetchEvents, createRegistration } from "@/lib/registration-api";
 import type { EventsResponse } from "@/lib/registration-api";
 import type { RegistrationResponse } from "@/types/registration";
 
-import { isRegistrationOpen, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
+import { isRegistrationOpen, isFestOver, FEST_OVER_MESSAGE, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
 
 const currentYear = new Date().getFullYear();
 const SUPPORT_PHONE = "+380973670219";
@@ -92,6 +92,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const Registration = () => {
+  const festOver = isFestOver();
   const registrationOpen = isRegistrationOpen();
   const [order, setOrder] = useState<RegistrationResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -186,14 +187,28 @@ const Registration = () => {
 
         {!registrationOpen ? (
           <div className="bg-card rounded-2xl shadow-md p-8 text-center space-y-4">
-            <p className="text-4xl">🗓️</p>
+            <p className="text-4xl">{festOver ? "🏁" : "🗓️"}</p>
             <h2 className="font-heading font-bold text-xl text-foreground">
-              Реєстрація ще не відкрита
+              {festOver ? "Реєстрація закрита" : "Реєстрація ще не відкрита"}
             </h2>
             <p className="text-muted-foreground">
-              Реєстрація на виставкові забіги відкриється{" "}
-              <span className="text-primary font-semibold">{REGISTRATION_OPEN_LABEL}</span>.
+              {festOver ? (
+                FEST_OVER_MESSAGE
+              ) : (
+                <>
+                  Реєстрація на виставкові забіги відкриється{" "}
+                  <span className="text-primary font-semibold">{REGISTRATION_OPEN_LABEL}</span>.
+                </>
+              )}
             </p>
+            {festOver && (
+              <Link
+                to="/results"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all"
+              >
+                🏆 Переглянути результати
+              </Link>
+            )}
             <Link
               to="/"
               className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline transition-colors"

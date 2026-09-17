@@ -26,7 +26,8 @@ const CountdownTimer = () => {
   if (timeLeft.expired) {
     return (
       <div className="text-center py-6">
-        <p className="text-2xl font-heading font-bold text-primary">🎉 Фестиваль розпочався!</p>
+        <p className="text-2xl font-heading font-bold text-primary">🎉 Фест завершено!</p>
+        <p className="text-sm text-primary-foreground/80 mt-2">Дякуємо всім учасникам</p>
       </div>
     );
   }
