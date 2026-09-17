@@ -162,7 +162,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if ("birthYear" in body) {
-      if (body.birthYear === undefined || body.birthYear < 0 || (body.birthYear > 0 && body.birthYear < 2000)) return badRequest(res, "Invalid birthYear");
+      // 1930 rather than 2000: adult races (Steeplechase Mile) share this table.
+      if (body.birthYear === undefined || body.birthYear < 0 || (body.birthYear > 0 && body.birthYear < 1930)) return badRequest(res, "Invalid birthYear");
       values.push(body.birthYear);
       setClauses.push(`birth_year = $${values.length}`);
     }

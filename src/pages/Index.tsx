@@ -5,6 +5,7 @@ import ExhibitionRaces from "@/components/ExhibitionRaces";
 import HowToParticipate from "@/components/HowToParticipate";
 import TeamSection from "@/components/TeamSection";
 import ProgramSection from "@/components/ProgramSection";
+import AdultRace from "@/components/AdultRace";
 import LocationSection from "@/components/LocationSection";
 import Footer from "@/components/Footer";
 
@@ -18,6 +19,7 @@ const Index = () => {
       <HowToParticipate />
       <TeamSection />
       <ProgramSection />
+      <AdultRace />
       <LocationSection />
       <Footer />
     </div>

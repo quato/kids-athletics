@@ -22,6 +22,9 @@ const Navbar = () => {
   const festOver = isFestOver(upcoming);
   const registrationOpen = isRegistrationOpen(upcoming);
   const resultsPath = resultsPathFor(edition);
+  const links = edition.adultRace
+    ? [...hashLinks, { href: "#adults", label: "Дорослі" }]
+    : hashLinks;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -43,7 +46,7 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
-          {hashLinks.map((l) => (
+          {links.map((l) => (
             <a
               key={l.href}
               href={hashHref(l.href)}
@@ -96,7 +99,7 @@ const Navbar = () => {
 
       {menuOpen && (
         <div className="md:hidden bg-card/95 backdrop-blur-md border-t border-border px-4 py-4 space-y-3">
-          {hashLinks.map((l) => (
+          {links.map((l) => (
             <a
               key={l.href}
               href={hashHref(l.href)}

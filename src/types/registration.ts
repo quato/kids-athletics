@@ -4,6 +4,7 @@ export interface Event {
   date: string;
   feeAmount: number;
   registrationDeadline: string;
+  audience: "children" | "adults";
 }
 
 export interface ChildInput {

@@ -27,6 +27,8 @@ export interface AdminOrdersData {
   registeredChildren: number;
   childrenLimit: number;
   remainingPlaces: number;
+  registeredAdults: number;
+  adultLimit: number;
 }
 
 export async function login(password: string): Promise<void> {

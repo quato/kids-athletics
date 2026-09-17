@@ -45,6 +45,16 @@ export type ExhibitionRace = {
   event: string;
 };
 
+export type AdultRace = {
+  name: string;
+  tagline: string;
+  description: string;
+  highlights: string[];
+  fee: number;
+  placeLimit: number;
+  minAge: number;
+};
+
 export type Edition = {
   slug: string;
   shortName: string;
@@ -69,6 +79,8 @@ export type Edition = {
   teamRegistrationClosedReason?: string;
   teamDisciplines: TeamProgramDiscipline[];
   exhibitionRaces: ExhibitionRace[];
+  /** Optional adult race running alongside the children's programme. */
+  adultRace?: AdultRace;
   reglamentPdf: string;
   results: EditionResults | null;
 };

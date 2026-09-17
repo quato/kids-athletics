@@ -59,6 +59,16 @@ When registration opens on a fixed date, it is driven entirely by `registrationO
 `registrationOpenLabel` on the edition — no DB change needed. `VITE_REGISTRATION_OPEN=true` forces
 it open for testing and overrides that date, so keep it `false` in production.
 
+## Adult Races
+
+`events.audience` is `'children'` by default and `'adults'` for a race aimed at parents and guests
+(OCTOBER FEST has Steeplechase Mile, 500 grn, 30 places). The two audiences are counted apart:
+the 200-place limit only counts `audience = 'children'`, adults are counted against `ADULT_LIMITS`
+in `api/_lib/edition.ts`, and `/api/events` drops the adult product once its places run out.
+Adults must be at least `ADULT_MIN_AGE` (18), which is why the birth-year floor across the
+registration form and API is 1930 rather than 2000 — the exact rule is applied per audience once the
+chosen event is known. In start lists and stats, adults appear as their own `adults` age group.
+
 ## Registration Statuses
 
 | Status | Meaning |

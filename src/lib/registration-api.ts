@@ -17,6 +17,8 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 export interface EventsResponse {
   events: Event[];
   registrationOpen: boolean;
+  /** Places left in the adult race; 0 also means it is absent from `events`. */
+  adultPlacesLeft: number;
 }
 
 export async function fetchEvents(): Promise<EventsResponse> {

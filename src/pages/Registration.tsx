@@ -67,11 +67,13 @@ function normalizePhoneForSubmit(masked: string): string {
   return masked.trim();
 }
 
+// The floor here is deliberately loose because adult races share this form; the
+// year is checked against the chosen event's audience on submit.
 const childSchema = z.object({
-  childName: z.string().min(2, "Введіть ім'я дитини (мінімум 2 символи)"),
+  childName: z.string().min(2, "Введіть ім'я учасника (мінімум 2 символи)"),
   birthYear: z.coerce
     .number({ invalid_type_error: "Вкажіть рік народження" })
-    .min(2000, "Рік народження не може бути раніше 2000")
+    .min(1930, "Вкажіть коректний рік народження")
     .max(currentYear, `Рік народження не може бути пізніше ${currentYear}`),
   eventId: z.coerce.number().min(1, "Оберіть подію"),
 });
@@ -87,7 +89,7 @@ const schema = z.object({
       return false;
     }, "Формат: +38 0XX XXX XX XX"),
   email: z.string().email("Невірний формат email"),
-  children: z.array(childSchema).min(1, "Додайте хоча б одну дитину"),
+  children: z.array(childSchema).min(1, "Додайте хоча б одного учасника"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -110,6 +112,10 @@ const Registration = () => {
     ? eventsResponse?.events.filter((e) => !/командн/i.test(e.name))
     : eventsResponse?.events;
   const capacityReached = eventsResponse ? !eventsResponse.registrationOpen : false;
+  const adultRace = edition.adultRace;
+  const latestAdultBirthYear = currentYear - (adultRace?.minAge ?? 18);
+  const isAdultEvent = (eventId: number | string | undefined) =>
+    eventsData?.find((e) => e.id === Number(eventId))?.audience === "adults";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -154,6 +160,27 @@ const Registration = () => {
 
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
+
+    // Age rules differ per audience, so they are checked once the event is picked.
+    let ageInvalid = false;
+    values.children.forEach((child, index) => {
+      const year = Number(child.birthYear);
+      if (isAdultEvent(child.eventId)) {
+        if (year > latestAdultBirthYear) {
+          form.setError(`children.${index}.birthYear`, {
+            message: `Для дорослого забігу — ${latestAdultBirthYear} рік народження або раніше`,
+          });
+          ageInvalid = true;
+        }
+      } else if (year < 2000) {
+        form.setError(`children.${index}.birthYear`, {
+          message: "Рік народження дитини не може бути раніше 2000",
+        });
+        ageInvalid = true;
+      }
+    });
+    if (ageInvalid) return;
+
     try {
       const data = await createRegistration({
         parentName: values.parentName,
@@ -388,17 +415,19 @@ const Registration = () => {
                   {/* ── Children list ── */}
                   <div className="space-y-4">
                     <h3 className="font-heading font-bold text-base text-foreground">
-                      Діти ({fields.length})
+                      {adultRace ? "Учасники" : "Діти"} ({fields.length})
                     </h3>
 
-                    {fields.map((fieldItem, index) => (
+                    {fields.map((fieldItem, index) => {
+                      const adultRow = isAdultEvent(watchedChildren[index]?.eventId);
+                      return (
                       <div
                         key={fieldItem.id}
                         className="rounded-xl border border-border p-4 space-y-3 relative"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-semibold text-muted-foreground">
-                            Дитина {index + 1}
+                            {adultRow ? "Дорослий учасник" : "Дитина"} {index + 1}
                           </span>
                           {fields.length > 1 && (
                             <button
@@ -417,7 +446,9 @@ const Registration = () => {
                           name={`children.${index}.childName`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Ім'я та прізвище дитини *</FormLabel>
+                              <FormLabel>
+                                Ім'я та прізвище {adultRow ? "учасника" : "дитини"} *
+                              </FormLabel>
                               <FormControl>
                                 <Input placeholder="Іваненко Михайло" {...field} />
                               </FormControl>
@@ -434,10 +465,10 @@ const Registration = () => {
                               <FormLabel>Рік народження *</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="2015"
+                                  placeholder={adultRow ? "1990" : "2015"}
                                   type="number"
-                                  min={2000}
-                                  max={currentYear}
+                                  min={adultRow ? 1930 : 2000}
+                                  max={adultRow ? latestAdultBirthYear : currentYear}
                                   {...field}
                                   value={field.value === 0 ? "" : field.value}
                                 />
@@ -473,7 +504,8 @@ const Registration = () => {
                           )}
                         />
                       </div>
-                    ))}
+                      );
+                    })}
 
                     <Button
                       type="button"
@@ -483,7 +515,7 @@ const Registration = () => {
                       onClick={() => append({ childName: "", birthYear: 0, eventId: defaultEventId })}
                     >
                       <PlusCircle className="w-4 h-4" />
-                      Додати ще дитину
+                      {adultRace ? "Додати ще учасника" : "Додати ще дитину"}
                     </Button>
                   </div>
 

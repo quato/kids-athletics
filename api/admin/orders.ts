@@ -1,7 +1,13 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { AGE_GROUP_SQL, isKnownAgeGroup } from "../_lib/age-groups.js";
-import { childrenLimitFor, EDITION_REGISTRATION_COUNT_SQL, resolveEdition } from "../_lib/edition.js";
+import {
+  adultLimitFor,
+  childrenLimitFor,
+  EDITION_ADULT_COUNT_SQL,
+  EDITION_REGISTRATION_COUNT_SQL,
+  resolveEdition,
+} from "../_lib/edition.js";
 import { json, methodNotAllowed, serverError } from "../_lib/http.js";
 
 function authenticate(req: VercelRequest): boolean {
@@ -89,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const [result, childrenCountResult] = await Promise.all([
+    const [result, childrenCountResult, adultCountResult] = await Promise.all([
       pool.query<OrderRow>(`
         SELECT
           o.id,
@@ -125,6 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ORDER BY o.created_at DESC
       `, [edition]),
       pool.query<{ count: string }>(EDITION_REGISTRATION_COUNT_SQL, [edition]),
+      pool.query<{ count: string }>(EDITION_ADULT_COUNT_SQL, [edition]),
     ]);
 
     if (req.query.format === "csv") {
@@ -214,6 +221,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const registeredChildren = parseInt(childrenCountResult.rows[0].count, 10);
     const childrenLimit = childrenLimitFor(edition);
     const remainingPlaces = Math.max(childrenLimit - registeredChildren, 0);
+    const registeredAdults = parseInt(adultCountResult.rows[0].count, 10);
+    const adultLimit = adultLimitFor(edition);
 
     return json(res, 200, {
       orders,
@@ -221,6 +230,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       registeredChildren,
       childrenLimit,
       remainingPlaces,
+      registeredAdults,
+      adultLimit,
     });
   } catch (err) {
     return serverError(res, err);

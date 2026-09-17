@@ -5,6 +5,7 @@ export const AGE_GROUP_SQL = `
     WHEN r.birth_year BETWEEN 2018 AND 2019 THEN '2018-2019'
     WHEN r.birth_year BETWEEN 2016 AND 2017 THEN '2016-2017'
     WHEN r.birth_year BETWEEN 2014 AND 2015 THEN '2014-2015'
+    WHEN r.birth_year BETWEEN 1930 AND 2008 THEN 'adults'
     ELSE 'special'
   END
 `;
@@ -15,6 +16,7 @@ export const AGE_GROUPS = [
   { key: "2018-2019", label: "2018 – 2019" },
   { key: "2016-2017", label: "2016 – 2017" },
   { key: "2014-2015", label: "2014 – 2015" },
+  { key: "adults", label: "Steeplechase Mile (18+)" },
 ] as const;
 
 export type AgeGroupKey = (typeof AGE_GROUPS)[number]["key"];

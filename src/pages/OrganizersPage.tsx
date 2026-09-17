@@ -1431,6 +1431,8 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const totalCollected = orders.filter((o) => o.status === "paid").reduce((s, o) => s + o.expectedAmount, 0);
   const remainingPlaces = ordersData?.remainingPlaces ?? 0;
   const childrenLimit = ordersData?.childrenLimit ?? selectedEdition.participantLimit;
+  const registeredAdults = ordersData?.registeredAdults ?? 0;
+  const adultLimit = ordersData?.adultLimit ?? 0;
 
   const totalChildren = orders.reduce((s, o) => s + o.children.length, 0);
   const confirmedChildren = orders
@@ -1633,10 +1635,17 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                 <StatCard label="Вільні місця" value={remainingPlaces} icon={Users} />
               )}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <StatCard label="Дітей заявлено" value={totalChildren} icon={Users} />
               <StatCard label="Дітей підтверджено" value={confirmedChildren} icon={CheckCircle2} />
               <StatCard label="Зібрано" value={`${totalCollected} грн`} icon={Banknote} />
+              {adultLimit > 0 && (
+                <StatCard
+                  label="Дорослі (Steeplechase)"
+                  value={`${registeredAdults} / ${adultLimit}`}
+                  icon={Users}
+                />
+              )}
             </div>
 
             {/* Filter tabs */}

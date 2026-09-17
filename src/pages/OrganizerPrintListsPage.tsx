@@ -15,6 +15,7 @@ const AGE_GROUPS = [
   { key: "2018-2019", label: "2018 – 2019", event: "Біг на 150 м (100м гладкий біг + 50м з перешкодами)" },
   { key: "2016-2017", label: "2016 – 2017", event: "Біг на 200 м (150м гладкий біг + 50м з перешкодами)" },
   { key: "2014-2015", label: "2014 – 2015", event: "Біг на 200 м (150м гладкий біг + 50м з перешкодами)" },
+  { key: "adults", label: "Дорослі (18+)", event: "Steeplechase Mile — миля, 4 кола, 2 перешкоди на колі" },
 ] as const;
 
 function ParticipantsTable({ participants }: { participants: PrintListParticipant[] }) {

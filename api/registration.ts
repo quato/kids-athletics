@@ -4,7 +4,14 @@ import { json, methodNotAllowed, badRequest, notFound, serverError } from "./_li
 import { sendRegistrationEmail } from "./_lib/email.js";
 import { sendTelegramMessage } from "./_lib/telegram.js";
 import { findDuplicates } from "./_lib/duplicates.js";
-import { ACTIVE_EDITION, CHILDREN_LIMIT, EDITION_REGISTRATION_COUNT_SQL } from "./_lib/edition.js";
+import {
+  ACTIVE_EDITION,
+  ADULT_LIMIT,
+  ADULT_MIN_AGE,
+  CHILDREN_LIMIT,
+  EDITION_ADULT_COUNT_SQL,
+  EDITION_REGISTRATION_COUNT_SQL,
+} from "./_lib/edition.js";
 
 interface ChildInput {
   childName: string;
@@ -37,7 +44,9 @@ function validateBody(body: unknown): body is RegistrationBody {
       typeof c.childName === "string" &&
       c.childName.trim().length >= 2 &&
       typeof c.birthYear === "number" &&
-      c.birthYear >= 2000 &&
+      // Adults are allowed here too; the exact floor per audience is checked
+      // once the events (and therefore their audience) are known.
+      c.birthYear >= 1930 &&
       c.birthYear <= currentYear &&
       typeof c.eventId === "number" &&
       c.eventId > 0,
@@ -68,27 +77,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { parentName, phone, email, children } = req.body as RegistrationBody;
 
-  const capResult = await pool.query<{ count: string }>(EDITION_REGISTRATION_COUNT_SQL, [ACTIVE_EDITION]);
-  const registeredChildren = parseInt(capResult.rows[0].count, 10);
-  if (registeredChildren + children.length > CHILDREN_LIMIT) {
-    return json(res, 409, {
-      error: `Реєстрацію закрито — досягнуто максимальну кількість дітей (${CHILDREN_LIMIT})`,
-    });
-  }
-
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     // Fetch fee_amount for every requested event, in one query
     const eventIds = [...new Set(children.map((c) => c.eventId))];
-    const eventResult = await client.query<{ id: number; name: string; fee_amount: string }>(
-      `SELECT id, name, fee_amount FROM events WHERE id = ANY($1::int[]) AND edition = $2`,
+    const eventResult = await client.query<{ id: number; name: string; fee_amount: string; audience: string }>(
+      `SELECT id, name, fee_amount, audience FROM events WHERE id = ANY($1::int[]) AND edition = $2`,
       [eventIds, ACTIVE_EDITION],
     );
 
     const eventMap = new Map(
-      eventResult.rows.map((r) => [r.id, { name: r.name, fee: parseFloat(r.fee_amount) }]),
+      eventResult.rows.map((r) => [
+        r.id,
+        { name: r.name, fee: parseFloat(r.fee_amount), audience: r.audience },
+      ]),
     );
 
     // Validate all events exist
@@ -96,6 +100,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!eventMap.has(child.eventId)) {
         await client.query("ROLLBACK");
         return notFound(res, `Event with id ${child.eventId} not found`);
+      }
+    }
+
+    // Adult races carry their own age floor and their own capacity, so the two
+    // audiences are validated and counted apart from each other.
+    const adultEntries = children.filter((c) => eventMap.get(c.eventId)!.audience === "adults");
+    const childEntries = children.filter((c) => eventMap.get(c.eventId)!.audience !== "adults");
+
+    const latestAdultBirthYear = new Date().getFullYear() - ADULT_MIN_AGE;
+    if (adultEntries.some((c) => c.birthYear > latestAdultBirthYear)) {
+      await client.query("ROLLBACK");
+      return badRequest(
+        res,
+        `Дорослі забіги — для учасників від ${ADULT_MIN_AGE} років (рік народження ${latestAdultBirthYear} або раніше)`,
+      );
+    }
+    if (childEntries.some((c) => c.birthYear < 2000)) {
+      await client.query("ROLLBACK");
+      return badRequest(res, "Рік народження дитини не може бути раніше 2000");
+    }
+
+    if (childEntries.length > 0) {
+      const capResult = await client.query<{ count: string }>(
+        EDITION_REGISTRATION_COUNT_SQL,
+        [ACTIVE_EDITION],
+      );
+      if (parseInt(capResult.rows[0].count, 10) + childEntries.length > CHILDREN_LIMIT) {
+        await client.query("ROLLBACK");
+        return json(res, 409, {
+          error: `Реєстрацію закрито — досягнуто максимальну кількість дітей (${CHILDREN_LIMIT})`,
+        });
+      }
+    }
+
+    if (adultEntries.length > 0) {
+      const adultResult = await client.query<{ count: string }>(
+        EDITION_ADULT_COUNT_SQL,
+        [ACTIVE_EDITION],
+      );
+      if (parseInt(adultResult.rows[0].count, 10) + adultEntries.length > ADULT_LIMIT) {
+        await client.query("ROLLBACK");
+        return json(res, 409, {
+          error: `Місця на дорослий забіг закінчилися — всього ${ADULT_LIMIT} місць`,
+        });
       }
     }
 
