@@ -105,7 +105,10 @@ const Registration = () => {
     queryFn: fetchEvents,
   });
 
-  const eventsData = eventsResponse?.events;
+  // Team products are named after the section, the way the exhibition ones are.
+  const eventsData = edition.teamRegistrationClosed
+    ? eventsResponse?.events.filter((e) => !/командн/i.test(e.name))
+    : eventsResponse?.events;
   const capacityReached = eventsResponse ? !eventsResponse.registrationOpen : false;
 
   const form = useForm<FormValues>({

@@ -49,6 +49,16 @@ To close registration early:
 UPDATE events SET registration_deadline = now() WHERE id = 1;
 ```
 
+Closing one section only (for example when the team places fill up but exhibition races stay open)
+takes two steps: run the `UPDATE` above for that product so `/api/events` stops returning it, and
+set `teamRegistrationClosed` on the edition so the site explains why instead of just hiding it. See
+`docs/migrations/004-close-october-team-registration.sql`. A past deadline does not block manual
+registrations in `/organizers`, so organizers can still enter teams by hand.
+
+When registration opens on a fixed date, it is driven entirely by `registrationOpensAt` and
+`registrationOpenLabel` on the edition — no DB change needed. `VITE_REGISTRATION_OPEN=true` forces
+it open for testing and overrides that date, so keep it `false` in production.
+
 ## Registration Statuses
 
 | Status | Meaning |

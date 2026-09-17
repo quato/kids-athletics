@@ -1,9 +1,9 @@
-import iconMixed from "@/assets/icon-1-2026.png";
-import iconAgility from "@/assets/icon-3-2026.png";
-import iconEndurance from "@/assets/icon-6-2026.png";
+import iconMixed from "@/assets/icon-mixed-2026-10.png";
 import iconTripleJump from "@/assets/icon-triple-jump-2026-10.png";
+import iconAgility from "@/assets/icon-agility-2026-10.png";
 import iconZigzag from "@/assets/icon-zigzag-2026-10.png";
 import iconVortex from "@/assets/icon-vortex-2026-10.png";
+import iconEndurance from "@/assets/icon-endurance-2026-10.png";
 import type { Edition } from "./types";
 
 export const october2026: Edition = {
@@ -13,9 +13,9 @@ export const october2026: Edition = {
   eventDate: new Date("2026-10-11T09:00:00+03:00"),
   eventDateLabel: "11 жовтня 2026 р.",
   festOverAt: new Date("2026-10-11T21:00:00+03:00"),
-  registrationOpensAt: new Date("2026-09-01T00:00:00+03:00"),
-  registrationOpenLabel: "вже відкрита",
-  statsOpensAt: new Date("2026-09-01T00:00:00+03:00"),
+  registrationOpensAt: new Date("2026-09-20T00:00:00+03:00"),
+  registrationOpenLabel: "20 вересня 2026 року",
+  statsOpensAt: new Date("2026-09-20T00:00:00+03:00"),
   registrationDeadlineLabel: "до 5 жовтня 2026 року",
   city: "Дніпро",
   venue: "Точна адреса стадіону буде повідомлена зареєстрованим учасникам.",
@@ -27,7 +27,8 @@ export const october2026: Edition = {
     "2 дітей 2017–2018 року народження",
     "2 дітей 2019–2020 року народження",
   ],
-  teamRegistrationClosed: false,
+  teamRegistrationClosed: true,
+  teamRegistrationClosedReason: "ліміт команд вже заповнено",
   teamDisciplines: [
     { id: "mixed", name: "Естафета «Змішана»", icon: iconMixed },
     { id: "triple-jump", name: "Стрибки «Потрійний з місця»", icon: iconTripleJump },
