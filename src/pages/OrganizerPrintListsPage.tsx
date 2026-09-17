@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Printer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchPrintLists } from "@/lib/admin-api";
 import type { PrintListParticipant } from "@/lib/admin-api";
+import { editionDisplayName, getEdition, getUpcomingEdition } from "@/editions";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -49,15 +50,18 @@ function ParticipantsTable({ participants }: { participants: PrintListParticipan
 
 const OrganizerPrintListsPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const token = localStorage.getItem(STORAGE_KEY);
+  const edition = searchParams.get("edition") ?? getUpcomingEdition().slug;
+  const editionMeta = getEdition(edition) ?? getUpcomingEdition();
 
   useEffect(() => {
     if (!token) navigate("/organizers", { replace: true });
   }, [token, navigate]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-print-lists", token],
-    queryFn: () => fetchPrintLists(token!),
+    queryKey: ["admin-print-lists", token, edition],
+    queryFn: () => fetchPrintLists(token!, edition),
     enabled: !!token,
   });
 
@@ -212,6 +216,9 @@ const OrganizerPrintListsPage = () => {
                     Вікова категорія {group.label}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1">{group.event}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {editionDisplayName(editionMeta)} — {editionMeta.eventDateLabel}
+                  </p>
                   {generatedLabel && (
                     <p className="text-xs text-muted-foreground mt-2 no-print sm:hidden">
                       Згенеровано: {generatedLabel}

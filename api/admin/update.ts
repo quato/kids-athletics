@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, serverError } from "../_lib/http.js";
 import { sendTelegramMessage } from "../_lib/telegram.js";
+import { archivedEditionError, findArchivedEditionOfOrder } from "../_lib/edition.js";
 
 function authenticate(req: VercelRequest): boolean {
   const expectedPassword = process.env.ORGANIZER_PASSWORD;
@@ -40,6 +41,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return json(res, 404, { error: "Registration not found" });
         }
         const orderId = regCheck.rows[0].order_id;
+
+        const archived = await findArchivedEditionOfOrder(client, orderId);
+        if (archived) {
+          await client.query("ROLLBACK");
+          return json(res, 409, archivedEditionError(archived));
+        }
 
         const orderCheck = await client.query<{ status: string }>(
           `SELECT status FROM orders WHERE id = $1 LIMIT 1`,
@@ -95,6 +102,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (check.rows.length === 0) {
         await client.query("ROLLBACK");
         return json(res, 404, { error: "Order not found" });
+      }
+      const archived = await findArchivedEditionOfOrder(client, body.orderId);
+      if (archived) {
+        await client.query("ROLLBACK");
+        return json(res, 409, archivedEditionError(archived));
       }
       if (check.rows[0].status === "paid") {
         await client.query("ROLLBACK");
@@ -162,6 +174,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     values.push(body.childId);
 
     try {
+      const owner = await pool.query<{ order_id: number }>(
+        `SELECT order_id FROM registrations WHERE id = $1 LIMIT 1`,
+        [body.childId],
+      );
+      if (owner.rows.length === 0) {
+        return json(res, 404, { error: "Child registration not found" });
+      }
+      const archived = await findArchivedEditionOfOrder(pool, owner.rows[0].order_id);
+      if (archived) {
+        return json(res, 409, archivedEditionError(archived));
+      }
+
       const result = await pool.query(
         `UPDATE registrations SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING id`,
         values,
@@ -220,6 +244,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    const archived = await findArchivedEditionOfOrder(client, orderId!);
+    if (archived) {
+      await client.query("ROLLBACK");
+      return json(res, 409, archivedEditionError(archived));
+    }
 
     const result = await client.query<{
       id: number;

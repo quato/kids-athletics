@@ -23,6 +23,7 @@ export interface Order {
 
 export interface AdminOrdersData {
   orders: Order[];
+  edition: string;
   registeredChildren: number;
   childrenLimit: number;
   remainingPlaces: number;
@@ -45,6 +46,7 @@ export interface AdminEvent {
   id: number;
   name: string;
   feeAmount: number;
+  edition: string;
 }
 
 export interface ManualRegistrationInput {
@@ -60,8 +62,9 @@ export interface ManualRegistrationInput {
   }>;
 }
 
-export async function fetchAdminEvents(token: string): Promise<AdminEvent[]> {
-  const res = await fetch("/api/admin/events", {
+export async function fetchAdminEvents(token: string, edition?: string): Promise<AdminEvent[]> {
+  const query = edition ? `?edition=${encodeURIComponent(edition)}` : "";
+  const res = await fetch(`/api/admin/events${query}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -275,8 +278,9 @@ export interface PrintListsData {
   generatedAt: string;
 }
 
-export async function fetchPrintLists(token: string): Promise<PrintListsData> {
-  const res = await fetch("/api/admin/orders?format=print-lists", {
+export async function fetchPrintLists(token: string, edition?: string): Promise<PrintListsData> {
+  const query = edition ? `&edition=${encodeURIComponent(edition)}` : "";
+  const res = await fetch(`/api/admin/orders?format=print-lists${query}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -286,8 +290,9 @@ export async function fetchPrintLists(token: string): Promise<PrintListsData> {
   return (await res.json()) as PrintListsData;
 }
 
-export async function fetchOrders(token: string): Promise<AdminOrdersData> {
-  const res = await fetch("/api/admin/orders", {
+export async function fetchOrders(token: string, edition?: string): Promise<AdminOrdersData> {
+  const query = edition ? `?edition=${encodeURIComponent(edition)}` : "";
+  const res = await fetch(`/api/admin/orders${query}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

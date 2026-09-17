@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import pool from "../_lib/db.js";
 import { json, methodNotAllowed, badRequest, serverError } from "../_lib/http.js";
 import { kopecksToUah, unixToDate } from "../_lib/monobank.js";
+import { archivedEditionError, findArchivedEditionOfOrder } from "../_lib/edition.js";
 
 // ── Webhook events log (GET ?tab=webhooks) ────────────────────────────────────
 
@@ -218,6 +219,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const order = orderCheck.rows[0];
 
+      const archived = await findArchivedEditionOfOrder(client, body.orderId);
+      if (archived) {
+        await client.query("ROLLBACK");
+        return json(res, 409, archivedEditionError(archived));
+      }
+
       if (order.status !== "paid" || !order.mono_transaction_id) {
         await client.query("ROLLBACK");
         return json(res, 409, { error: "Order has no linked Monobank transaction" });
@@ -326,6 +333,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (orderCheck.rows[0].status === "paid") {
       await client.query("ROLLBACK");
       return json(res, 409, { error: "Order is already paid" });
+    }
+    const archivedOrderEdition = await findArchivedEditionOfOrder(client, body.orderId);
+    if (archivedOrderEdition) {
+      await client.query("ROLLBACK");
+      return json(res, 409, archivedEditionError(archivedOrderEdition));
     }
 
     // Extract the raw StatementItem payload

@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Printer, Link2, FileJson, Webhook, Copy, Check, MessageSquare } from "lucide-react";
+import { Lock, Phone, Mail, ChevronDown, ChevronUp, LogOut, Loader2, Users, CheckCircle2, Clock, Banknote, PlusCircle, Trash2, X, AlertTriangle, Download, Printer, Link2, FileJson, Webhook, Copy, Check, MessageSquare, Archive } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { login, fetchOrders, fetchAdminEvents, manualRegistration, updateOrder, updateOrderStatus, updateChild, deleteChild, deleteOrder, fetchUnlinkedTransactions, linkTransaction, fetchLinkedTransactions, fetchWebhooks, unlinkTransaction } from "@/lib/admin-api";
 import type { Order, AdminEvent, OrderChild, UnlinkedTransaction, LinkedTransaction, WebhookEvent } from "@/lib/admin-api";
+import { editionDisplayName, editions, getEdition, getUpcomingEdition } from "@/editions";
 
 const STORAGE_KEY = "organizer_token";
 
@@ -108,12 +109,14 @@ function InlineEditField({
   placeholder,
   type = "text",
   className = "",
+  readOnly = false,
 }: {
   value: string;
   onSave: (v: string) => Promise<void>;
   placeholder?: string;
   type?: string;
   className?: string;
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -133,6 +136,10 @@ function InlineEditField({
       setSaving(false);
     }
   };
+
+  if (readOnly) {
+    return <span className={className}>{value || placeholder}</span>;
+  }
 
   if (!editing) {
     return (
@@ -169,10 +176,12 @@ function ChildEditRow({
   child,
   token,
   canDelete,
+  readOnly = false,
 }: {
   child: OrderChild;
   token: string;
   canDelete: boolean;
+  readOnly?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [startNumber, setStartNumber] = useState(
@@ -235,6 +244,7 @@ function ChildEditRow({
         value={child.childName}
         onSave={(v) => persistChild({ childName: v })}
         className="font-semibold text-foreground text-sm min-w-[140px]"
+        readOnly={readOnly}
       />
       <InlineEditField
         value={String(child.birthYear || "")}
@@ -242,6 +252,7 @@ function ChildEditRow({
         type="number"
         placeholder="рік"
         className="w-20 text-xs text-muted-foreground"
+        readOnly={readOnly}
       />
       <span className="text-xs text-muted-foreground">{child.eventName}</span>
 
@@ -249,28 +260,38 @@ function ChildEditRow({
         {/* Start number */}
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground whitespace-nowrap"># старт:</span>
-          <input
-            type="number"
-            min={1}
-            value={startNumber}
-            onChange={(e) => handleStartNumberChange(e.target.value)}
-            placeholder="—"
-            className="w-16 border border-input bg-background rounded-md px-2 py-1 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          {readOnly ? (
+            <span className="w-16 text-sm font-bold text-center text-foreground">{startNumber || "—"}</span>
+          ) : (
+            <input
+              type="number"
+              min={1}
+              value={startNumber}
+              onChange={(e) => handleStartNumberChange(e.target.value)}
+              placeholder="—"
+              className="w-16 border border-input bg-background rounded-md px-2 py-1 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          )}
         </div>
 
         {/* Presence toggle */}
-        <button
-          onClick={handlePresenceToggle}
-          className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors ${presenceClass}`}
-        >
-          {presenceLabel}
-        </button>
+        {readOnly ? (
+          <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${presenceClass}`}>
+            {presenceLabel}
+          </span>
+        ) : (
+          <button
+            onClick={handlePresenceToggle}
+            className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors ${presenceClass}`}
+          >
+            {presenceLabel}
+          </button>
+        )}
 
         {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
         {saved && !saving && <span className="text-xs text-success">Збережено</span>}
 
-        {canDelete && (
+        {canDelete && !readOnly && (
           <ConfirmDeleteButton
             onConfirm={async () => {
               await deleteChild(token, child.id);
@@ -422,7 +443,7 @@ function ViberLinkButton({ paymentCode, amountUah, phone }: { paymentCode: strin
   );
 }
 
-function OrderRow({ order, token }: { order: Order; token: string }) {
+function OrderRow({ order, token, readOnly = false }: { order: Order; token: string; readOnly?: boolean }) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
@@ -463,6 +484,7 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
               queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })
             )}
             className="font-semibold text-sm"
+            readOnly={readOnly}
           />
         </td>
         <td className="px-3 py-3 text-sm" onClick={(e) => e.stopPropagation()}>
@@ -488,16 +510,20 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
           {order.expectedAmount} грн
         </td>
         <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={handleStatusToggle}
-            disabled={statusSaving}
-            className="flex items-center gap-1"
-            title="Натисніть щоб змінити статус"
-          >
-            {statusSaving
-              ? <Loader2 className="w-3 h-3 animate-spin" />
-              : <StatusBadge status={order.status} />}
-          </button>
+          {readOnly ? (
+            <StatusBadge status={order.status} />
+          ) : (
+            <button
+              onClick={handleStatusToggle}
+              disabled={statusSaving}
+              className="flex items-center gap-1"
+              title="Натисніть щоб змінити статус"
+            >
+              {statusSaving
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <StatusBadge status={order.status} />}
+            </button>
+          )}
         </td>
         <td className="px-3 py-3 font-mono text-xs text-muted-foreground hidden lg:table-cell">
           {order.paymentCode}
@@ -506,7 +532,7 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </td>
         <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
-          {order.status !== "paid" && (
+          {order.status !== "paid" && !readOnly && (
             <ConfirmDeleteButton
               onConfirm={async () => {
                 await deleteOrder(token, order.id);
@@ -529,6 +555,7 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                   child={c}
                   token={token}
                   canDelete={order.status !== "paid" && order.children.length > 1}
+                  readOnly={readOnly}
                 />
               ))}
               {order.children.length === 0 && (
@@ -543,6 +570,7 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                       queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })
                     )}
                     className="text-xs"
+                    readOnly={readOnly}
                   />
                 </span>
                 <span className="flex items-center gap-1">
@@ -554,10 +582,11 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                     )}
                     type="email"
                     className="text-xs"
+                    readOnly={readOnly}
                   />
                 </span>
                 <span>Код платежу: <span className="font-mono font-bold text-foreground">{order.paymentCode}</span></span>
-                {order.status !== "paid" && (
+                {order.status !== "paid" && !readOnly && (
                   <span className="inline-flex items-center gap-1">
                     <CopyPaymentLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} />
                     <SmsLinkButton paymentCode={order.paymentCode} amountUah={order.expectedAmount} phone={order.phone} />
@@ -573,11 +602,13 @@ function OrderRow({ order, token }: { order: Order; token: string }) {
                     <span className="font-mono text-[10px] text-foreground bg-muted rounded px-1.5 py-0.5 break-all">
                       {order.monoTransactionId}
                     </span>
-                    <UnlinkButton
-                      orderId={order.id}
-                      token={token}
-                      onUnlinked={() => queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })}
-                    />
+                    {!readOnly && (
+                      <UnlinkButton
+                        orderId={order.id}
+                        token={token}
+                        onUnlinked={() => queryClient.invalidateQueries({ queryKey: ["admin-orders", token] })}
+                      />
+                    )}
                   </span>
                 )}
               </div>
@@ -1367,17 +1398,24 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const [filter, setFilter] = useState<Filter>("all");
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("registrations");
+  const upcoming = getUpcomingEdition();
+  const [edition, setEdition] = useState(upcoming.slug);
   const queryClient = useQueryClient();
 
+  // Archived fests are bookkeeping history: viewable, exportable, never editable.
+  const isArchive = edition !== upcoming.slug;
+  const selectedEdition = getEdition(edition) ?? upcoming;
+  const tab: Tab = isArchive ? "registrations" : activeTab;
+
   const { data: ordersData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["admin-orders", token],
-    queryFn: () => fetchOrders(token),
+    queryKey: ["admin-orders", token, edition],
+    queryFn: () => fetchOrders(token, edition),
     retry: false,
   });
 
   const { data: events = [] } = useQuery({
-    queryKey: ["admin-events", token],
-    queryFn: () => fetchAdminEvents(token),
+    queryKey: ["admin-events", token, edition],
+    queryFn: () => fetchAdminEvents(token, edition),
     retry: false,
   });
 
@@ -1392,6 +1430,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const pendingOrders = orders.filter((o) => o.status !== "paid").length;
   const totalCollected = orders.filter((o) => o.status === "paid").reduce((s, o) => s + o.expectedAmount, 0);
   const remainingPlaces = ordersData?.remainingPlaces ?? 0;
+  const childrenLimit = ordersData?.childrenLimit ?? selectedEdition.participantLimit;
 
   const totalChildren = orders.reduce((s, o) => s + o.children.length, 0);
   const confirmedChildren = orders
@@ -1411,7 +1450,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
 
   const handleExportCsv = async () => {
     try {
-      const res = await fetch("/api/admin/orders?format=csv", {
+      const res = await fetch(`/api/admin/orders?format=csv&edition=${encodeURIComponent(edition)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Не вдалося експортувати дані");
@@ -1420,7 +1459,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "registrations.csv";
+      a.download = `registrations-${edition}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1433,7 +1472,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {showModal && events.length > 0 && (
+      {showModal && !isArchive && events.length > 0 && (
         <ManualRegistrationModal
           token={token}
           events={events}
@@ -1443,15 +1482,22 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
       )}
       <Navbar />
       <main className="flex-1 container mx-auto max-w-6xl px-4 pt-28 pb-16">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="font-heading font-black text-2xl text-foreground">Організатори</h1>
+        <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+          <div>
+            <h1 className="font-heading font-black text-2xl text-foreground">Організатори</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isArchive
+                ? `Архів: ${editionDisplayName(selectedEdition)} — лише перегляд`
+                : `Активний фест: ${editionDisplayName(selectedEdition)} — ${selectedEdition.eventDateLabel}`}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            {activeTab === "registrations" && (
+            {tab === "registrations" && (
               <>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open("/organizers/print-lists", "_blank")}
+                  onClick={() => window.open(`/organizers/print-lists?edition=${encodeURIComponent(edition)}`, "_blank")}
                   className="gap-2"
                 >
                   <Printer className="w-4 h-4" />
@@ -1461,10 +1507,12 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                   <Download className="w-4 h-4" />
                   Експорт CSV
                 </Button>
-                <Button size="sm" onClick={() => setShowModal(true)} className="gap-2">
-                  <PlusCircle className="w-4 h-4" />
-                  Додати вручну
-                </Button>
+                {!isArchive && (
+                  <Button size="sm" onClick={() => setShowModal(true)} className="gap-2">
+                    <PlusCircle className="w-4 h-4" />
+                    Додати вручну
+                  </Button>
+                )}
               </>
             )}
             <Button variant="outline" size="sm" onClick={onLogout} className="gap-2">
@@ -1474,58 +1522,103 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
           </div>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab("registrations")}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-              activeTab === "registrations"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Реєстрації
-          </button>
-          <button
-            onClick={() => setActiveTab("transactions")}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
-              activeTab === "transactions"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Link2 className="w-3.5 h-3.5" />
-            Нерозпізнані платежі
-          </button>
-          <button
-            onClick={() => setActiveTab("linked")}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
-              activeTab === "linked"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Прив'язані платежі
-          </button>
-          <button
-            onClick={() => setActiveTab("webhooks")}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
-              activeTab === "webhooks"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Webhook className="w-3.5 h-3.5" />
-            Логи Webhooks
-          </button>
+        {/* Edition switcher — the active fest is managed, past fests are checked */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {editions.map((item) => {
+            const isSelected = item.slug === edition;
+            const isUpcoming = item.slug === upcoming.slug;
+            return (
+              <button
+                key={item.slug}
+                onClick={() => setEdition(item.slug)}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-2 ${
+                  isSelected
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {editionDisplayName(item)}
+                <span
+                  className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${
+                    isSelected
+                      ? "bg-background/20"
+                      : isUpcoming
+                      ? "bg-success/15 text-success"
+                      : "bg-muted-foreground/15"
+                  }`}
+                >
+                  {isUpcoming ? "активний" : "архів"}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {activeTab === "webhooks" ? (
+        {isArchive && (
+          <div className="flex items-start gap-2 mb-6 rounded-xl border border-border bg-muted/50 px-4 py-3">
+            <Archive className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-sm text-muted-foreground">
+              Фест «{editionDisplayName(selectedEdition)}» завершено {selectedEdition.eventDateLabel}. Дані доступні
+              для перегляду, експорту та друку — редагування, ручні реєстрації й операції з платежами
+              заблоковані. Щоб керувати реєстраціями, перейдіть на активний фест.
+            </p>
+          </div>
+        )}
+
+        {/* Tab switcher — payment operations only exist for the active fest */}
+        {!isArchive && (
+          <div className="flex gap-2 mb-6 flex-wrap">
+            <button
+              onClick={() => setActiveTab("registrations")}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                tab === "registrations"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Реєстрації
+            </button>
+            <button
+              onClick={() => setActiveTab("transactions")}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                tab === "transactions"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              Нерозпізнані платежі
+            </button>
+            <button
+              onClick={() => setActiveTab("linked")}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                tab === "linked"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Прив'язані платежі
+            </button>
+            <button
+              onClick={() => setActiveTab("webhooks")}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                tab === "webhooks"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Webhook className="w-3.5 h-3.5" />
+              Логи Webhooks
+            </button>
+          </div>
+        )}
+
+        {tab === "webhooks" ? (
           <WebhooksTab token={token} />
-        ) : activeTab === "linked" ? (
+        ) : tab === "linked" ? (
           <LinkedTransactionsTab token={token} />
-        ) : activeTab === "transactions" ? (
+        ) : tab === "transactions" ? (
           <TransactionsTab token={token} orders={orders} />
         ) : (
           <>
@@ -1534,7 +1627,11 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
               <StatCard label="Усього заявок" value={totalOrders} icon={Users} />
               <StatCard label="Оплачено" value={paidOrders} icon={CheckCircle2} />
               <StatCard label="Очікує оплату" value={pendingOrders} icon={Clock} />
-              <StatCard label="Вільні місця" value={remainingPlaces} icon={Users} />
+              {isArchive ? (
+                <StatCard label="Ліміт місць" value={childrenLimit} icon={Users} />
+              ) : (
+                <StatCard label="Вільні місця" value={remainingPlaces} icon={Users} />
+              )}
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
               <StatCard label="Дітей заявлено" value={totalChildren} icon={Users} />
@@ -1602,7 +1699,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                       </tr>
                     )}
                     {filtered.map((order) => (
-                      <OrderRow key={order.id} order={order} token={token} />
+                      <OrderRow key={order.id} order={order} token={token} readOnly={isArchive} />
                     ))}
                   </tbody>
                 </table>
