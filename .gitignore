@@ -26,3 +26,8 @@ dist-ssr
 .vercel
 
 results/
+
+# Local secrets (DATABASE_URL, ORGANIZER_PASSWORD, Monobank tokens)
+.env
+.env.*
+!.env.example
