@@ -101,8 +101,11 @@ create table if not exists events (
   name text not null,
   date timestamptz not null,
   fee_amount numeric(10,2) not null,
-  registration_deadline timestamptz not null
+  registration_deadline timestamptz not null,
+  edition text not null
 );
+
+create index if not exists idx_events_edition on events (edition);
 
 create table if not exists registrations (
   id serial primary key,
@@ -140,6 +143,8 @@ create index if not exists mono_events_processed_idx
 ```
 
 For future schema changes: run SQL directly in Neon SQL editor, then document here.
+
+Edition support (October 2026+): run `docs/migrations/003-event-editions.sql` to add `events.edition`, backfill May 2026 products, and insert the October fee catalog (400 / 500 грн). Public registration APIs count capacity per edition (`CHILDREN_LIMIT = 200`).
 
 ## Rollback
 

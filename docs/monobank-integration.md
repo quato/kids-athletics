@@ -81,10 +81,10 @@ Returns upcoming events (registration deadline in the future).
   "events": [
     {
       "id": 1,
-      "name": "Kids Athletics FEST — травень 2026",
-      "date": "2026-05-17T09:00:00.000Z",
-      "feeAmount": 350,
-      "registrationDeadline": "2026-05-15T23:59:00.000Z"
+      "name": "Виставковий забіг — OCTOBER FEST",
+      "date": "2026-10-11T06:00:00.000Z",
+      "feeAmount": 400,
+      "registrationDeadline": "2026-10-05T20:59:00.000Z"
     }
   ]
 }

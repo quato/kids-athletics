@@ -5,16 +5,37 @@
 Events are stored in the `events` table in Neon. Open the Neon SQL editor (https://console.neon.tech) and run:
 
 ```sql
-INSERT INTO events (name, date, fee_amount, registration_deadline)
+INSERT INTO events (name, date, fee_amount, registration_deadline, edition)
 VALUES (
-  'Kids Athletics FEST — травень 2026',           -- display name shown in registration form
-  '2026-05-17 09:00:00+03',                       -- event date/time (Kyiv timezone = UTC+3)
-  350.00,                                          -- registration fee in UAH
-  '2026-05-15 23:59:00+03'                         -- registration closes at this time
+  'Виставковий забіг — OCTOBER FEST',              -- display name shown in registration form
+  '2026-10-11 09:00:00+03',                        -- event date/time (Kyiv timezone = UTC+3)
+  400.00,                                          -- registration fee in UAH
+  '2026-10-05 23:59:00+03',                        -- registration closes at this time
+  'october-2026'                                   -- festival edition slug
 );
 ```
 
-After inserting, the event immediately appears in the `/registration` form dropdown (the API filters by `registration_deadline > now()`).
+Public `/api/events` and `/registration` only return products for the active edition (`october-2026`) whose `registration_deadline` is still in the future. Organizers can switch editions in `/organizers`.
+
+See `docs/migrations/003-event-editions.sql` for the `edition` column and the October 2026 products.
+
+## Active Fest vs Archive in `/organizers`
+
+The dashboard opens on the active fest — the first edition whose `festOverAt` is still in the
+future. The switcher above the tabs moves between editions, and the two modes differ on purpose:
+
+| | Active fest | Archived fest |
+|---|---|---|
+| Registrations table | editable (names, contacts, start numbers, presence, status, delete) | read-only |
+| Manual registration | available | hidden |
+| Payment tabs (unrecognised / linked / webhook logs) | available | hidden — payments only ever apply to the open fest |
+| CSV export, print lists | available (`registrations-<edition>.csv`) | available |
+
+The read-only rule is enforced server-side too, not just in the UI: `api/admin/update.ts` and
+`api/admin/transactions.ts` reject any mutation whose order belongs to a non-active edition with
+HTTP 409, and `api/admin/manual-registration.ts` refuses events from an archived edition. After a
+fest ends, flip `ACTIVE_EDITION` in `api/_lib/edition.ts` to the next slug — that single constant
+moves what ops can edit.
 
 To update the fee after an event is created (affects only new registrations, not existing ones):
 
