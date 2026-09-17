@@ -1,13 +1,16 @@
 import { Phone, Mail, Instagram } from "lucide-react";
+import { editionDisplayName, useEdition } from "@/editions";
 
 const Footer = () => {
+  const { edition } = useEdition();
+
   return (
     <footer className="bg-card border-t border-border py-12 px-4">
       <div className="container mx-auto max-w-5xl">
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           <div>
             <h3 className="font-heading font-bold text-xl text-foreground mb-3">
-              Kids Athletics FEST
+              {editionDisplayName(edition)}
             </h3>
             <p className="text-muted-foreground text-sm mb-4">
               Підтримуй легку атлетику! Приєднуйся до нас у справі підтримки та підйому юних спортсменів.

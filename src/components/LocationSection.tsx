@@ -1,6 +1,9 @@
 import stadion from "@/assets/stadion.jpg";
+import { useEdition } from "@/editions";
 
 const LocationSection = () => {
+  const { edition } = useEdition();
+
   return (
     <section className="relative py-24 overflow-hidden">
       <div
@@ -15,13 +18,11 @@ const LocationSection = () => {
         <div className="grid md:grid-cols-2 gap-8">
           <div>
             <h4 className="font-heading font-bold text-xl text-primary-foreground/90 mb-2 drop-shadow">Місто</h4>
-            <p className="text-3xl font-heading font-black text-accent drop-shadow-lg">Дніпро</p>
+            <p className="text-3xl font-heading font-black text-accent drop-shadow-lg">{edition.city}</p>
           </div>
           <div>
             <h4 className="font-heading font-bold text-xl text-primary-foreground/90 mb-2 drop-shadow">Деталі локації</h4>
-            <p className="text-primary-foreground/80 drop-shadow">
-              Точна адреса стадіону буде повідомлена зареєстрованим учасникам.
-            </p>
+            <p className="text-primary-foreground/80 drop-shadow">{edition.venue}</p>
           </div>
         </div>
       </div>

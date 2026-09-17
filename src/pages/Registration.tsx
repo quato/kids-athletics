@@ -24,7 +24,8 @@ import { fetchEvents, createRegistration } from "@/lib/registration-api";
 import type { EventsResponse } from "@/lib/registration-api";
 import type { RegistrationResponse } from "@/types/registration";
 
-import { isRegistrationOpen, isFestOver, FEST_OVER_MESSAGE, REGISTRATION_OPEN_LABEL } from "@/lib/registration-open";
+import { editionDisplayName, resultsPathFor, useEdition } from "@/editions";
+import { isRegistrationOpen, isFestOver, FEST_OVER_MESSAGE } from "@/lib/registration-open";
 
 const currentYear = new Date().getFullYear();
 const SUPPORT_PHONE = "+380973670219";
@@ -92,8 +93,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const Registration = () => {
-  const festOver = isFestOver();
-  const registrationOpen = isRegistrationOpen();
+  const { edition } = useEdition();
+  const festOver = isFestOver(edition);
+  const registrationOpen = isRegistrationOpen(edition);
   const [order, setOrder] = useState<RegistrationResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -182,7 +184,7 @@ const Registration = () => {
           Реєстрація учасників
         </h1>
         <p className="text-muted-foreground mb-8">
-          Kids Athletics FEST — один платіж на всіх дітей.
+          {editionDisplayName(edition)} — один платіж на всіх дітей.
         </p>
 
         {!registrationOpen ? (
@@ -197,13 +199,13 @@ const Registration = () => {
               ) : (
                 <>
                   Реєстрація на виставкові забіги відкриється{" "}
-                  <span className="text-primary font-semibold">{REGISTRATION_OPEN_LABEL}</span>.
+                  <span className="text-primary font-semibold">{edition.registrationOpenLabel}</span>.
                 </>
               )}
             </p>
             {festOver && (
               <Link
-                to="/results"
+                to={resultsPathFor(edition)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all"
               >
                 🏆 Переглянути результати
@@ -224,7 +226,7 @@ const Registration = () => {
               Реєстрацію закрито
             </h2>
             <p className="text-muted-foreground">
-              Досягнуто максимальну кількість заявок (140).
+              Досягнуто максимальну кількість заявок ({edition.participantLimit}).
               Слідкуйте за оновленнями в наших соцмережах.
             </p>
             <Link

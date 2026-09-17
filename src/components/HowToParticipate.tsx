@@ -1,29 +1,31 @@
 import { PenSquare, CreditCard, Footprints } from "lucide-react";
 import { Link } from "react-router-dom";
+import { resultsPathFor, useEdition } from "@/editions";
 import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
 
-const steps = [
-  {
-    icon: PenSquare,
-    title: "Крок 1",
-    description: "Заповніть реєстраційну форму",
-    action: { label: "Зареєструватися" },
-  },
-  {
-    icon: CreditCard,
-    title: "Крок 2",
-    description: "Сплатіть реєстраційний внесок",
-    price: "350 грн (виставкові) / 400 грн (командні)",
-  },
-  {
-    icon: Footprints,
-    title: "Крок 3",
-    description: "Підготуйте кросівки та гарний настрій!",
-  },
-];
-
 const HowToParticipate = () => {
-  const festOver = isFestOver();
+  const { edition, mode } = useEdition();
+  const archived = mode === "archive" || isFestOver(edition);
+
+  const steps = [
+    {
+      icon: PenSquare,
+      title: "Крок 1",
+      description: "Заповніть реєстраційну форму",
+      action: { label: "Зареєструватися" },
+    },
+    {
+      icon: CreditCard,
+      title: "Крок 2",
+      description: "Сплатіть реєстраційний внесок",
+      price: `${edition.fees.exhibition} грн (виставкові) / ${edition.fees.team} грн (командні)`,
+    },
+    {
+      icon: Footprints,
+      title: "Крок 3",
+      description: "Підготуйте кросівки та гарний настрій!",
+    },
+  ];
 
   return (
     <section className="section-padding bg-background">
@@ -44,7 +46,7 @@ const HowToParticipate = () => {
                 <span className="text-2xl font-heading font-black text-secondary">{step.price}</span>
               )}
               {step.action && (
-                festOver ? (
+                archived ? (
                   <span className="px-4 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-bold cursor-not-allowed">
                     {step.action.label}
                   </span>
@@ -64,15 +66,15 @@ const HowToParticipate = () => {
         <div className="max-w-xl mx-auto bg-accent/20 border-l-4 border-accent rounded-xl p-5 mb-8">
           <p className="font-bold text-foreground mb-1">⚠️ Важливо!</p>
           <p className="text-muted-foreground text-sm">
-            {festOver
+            {archived
               ? FEST_OVER_MESSAGE
-              : "Реєстрація буде відкрита до 20 травня 2026 року, за наявності місць. Загальний ліміт — 200 осіб."}
+              : `Реєстрація буде відкрита ${edition.registrationDeadlineLabel}, за наявності місць. Загальний ліміт — ${edition.participantLimit} осіб.`}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            to="/results?tab=individual"
+            to={resultsPathFor(edition, "individual")}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
           >
             🏆 Результати виставкових забігів

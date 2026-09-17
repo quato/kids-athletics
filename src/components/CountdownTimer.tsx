@@ -1,42 +1,38 @@
 import { useState, useEffect } from "react";
-
-const TARGET_DATE = new Date("2026-05-24T09:00:00+03:00");
+import { useEdition } from "@/editions";
+import { isFestOver } from "@/lib/registration-open";
 
 const CountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState(getTimeLeft());
-
-  function getTimeLeft() {
-    const now = new Date();
-    const diff = TARGET_DATE.getTime() - now.getTime();
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    return {
-      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((diff / (1000 * 60)) % 60),
-      seconds: Math.floor((diff / 1000) % 60),
-      expired: false,
-    };
-  }
+  const { edition } = useEdition();
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
+    const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  if (timeLeft.expired) {
+  const festOver = isFestOver(edition, now);
+  const diff = edition.eventDate.getTime() - now.getTime();
+  const expired = festOver || diff <= 0;
+
+  if (expired) {
     return (
       <div className="text-center py-6">
-        <p className="text-2xl font-heading font-bold text-primary">🎉 Фест завершено!</p>
-        <p className="text-sm text-primary-foreground/80 mt-2">Дякуємо всім учасникам</p>
+        <p className="text-2xl font-heading font-bold text-primary">
+          {festOver ? "🎉 Фест завершено!" : "🎉 Фестиваль розпочався!"}
+        </p>
+        {festOver && (
+          <p className="text-sm text-primary-foreground/80 mt-2">Дякуємо всім учасникам</p>
+        )}
       </div>
     );
   }
 
   const units = [
-    { value: timeLeft.days, label: "днів" },
-    { value: timeLeft.hours, label: "годин" },
-    { value: timeLeft.minutes, label: "хвилин" },
-    { value: timeLeft.seconds, label: "секунд" },
+    { value: Math.floor(diff / (1000 * 60 * 60 * 24)), label: "днів" },
+    { value: Math.floor((diff / (1000 * 60 * 60)) % 24), label: "годин" },
+    { value: Math.floor((diff / (1000 * 60)) % 60), label: "хвилин" },
+    { value: Math.floor((diff / 1000) % 60), label: "секунд" },
   ];
 
   return (

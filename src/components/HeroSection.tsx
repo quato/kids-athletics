@@ -1,7 +1,10 @@
 import heroBackground from "@/assets/hero-background.png";
+import { useEdition } from "@/editions";
 import CountdownTimer from "./CountdownTimer";
 
 const HeroSection = () => {
+  const { edition } = useEdition();
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       <div
@@ -14,14 +17,14 @@ const HeroSection = () => {
           className="text-5xl md:text-7xl font-heading font-black text-primary-foreground mb-4 drop-shadow-lg"
           style={{ animationDelay: "0.1s" }}
         >
-          Kids Athletics{" "}
-          <span className="text-accent">FEST</span>
+          {edition.shortName}{" "}
+          <span className="text-accent">{edition.accentWord}</span>
         </h1>
         <p className="text-xl md:text-2xl text-primary-foreground/90 font-heading font-semibold mb-2 drop-shadow">
           Фестиваль дитячої легкої атлетики!
         </p>
         <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 drop-shadow">
-          📅 24 травня 2026 р. &nbsp;·&nbsp; 📍 Дніпро
+          📅 {edition.eventDateLabel} &nbsp;·&nbsp; 📍 {edition.city}
         </p>
 
         <div className="mb-10">

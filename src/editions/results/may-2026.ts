@@ -1,32 +1,6 @@
-export type IndividualRow = {
-  no: number;
-  name: string;
-  birthYear?: number | null;
-  result: string | null;
-  bib: number;
-};
+import type { AgeCategoryRun, ResultTeamDiscipline, TeamStanding } from "../types";
 
-export type AgeCategoryRun = {
-  id: string;
-  label: string;
-  event: string;
-  showBirthYear: boolean;
-  rows: IndividualRow[];
-};
-
-export type TeamDiscipline = {
-  id: string;
-  name: string;
-};
-
-export type TeamStanding = {
-  team: string;
-  finalPlace: number;
-  totalPoints: number;
-  perDiscipline: Record<string, number>;
-};
-
-export const teamDisciplines: TeamDiscipline[] = [
+export const teamDisciplines: ResultTeamDiscipline[] = [
   { id: "sprint", name: "Спринт" },
   { id: "jump", name: "Стрибки за 15 сек" },
   { id: "agility", name: "Квадрат спритності" },

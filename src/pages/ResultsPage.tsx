@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { Trophy, Medal } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
-  ageCategoryRuns,
-  teamDisciplines,
-  teamStandings,
-  type AgeCategoryRun,
-} from "@/data/results";
+  editionDisplayName,
+  getEdition,
+  latestEditionWithResults,
+} from "@/editions";
+import type { AgeCategoryRun, Edition, EditionResults } from "@/editions/types";
+import NotFound from "./NotFound";
 
 type Tab = "teams" | "individual";
 
@@ -18,7 +19,8 @@ const medalStyles: Record<number, string> = {
   3: "border-amber-600/60 bg-amber-50 dark:bg-amber-950/20",
 };
 
-function TeamStandingsTab() {
+function TeamStandingsTab({ edition, results }: { edition: Edition; results: EditionResults }) {
+  const { teamStandings, teamDisciplines } = results;
   const sorted = [...teamStandings].sort((a, b) => a.finalPlace - b.finalPlace);
   const topThree = sorted.filter((t) => t.finalPlace <= 3);
 
@@ -30,7 +32,7 @@ function TeamStandingsTab() {
           Загальний залік команд
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Перемагає команда з меншою сумою балів за всі види програми (24.05.2026, м. Дніпро).
+          Перемагає команда з меншою сумою балів за всі види програми ({edition.eventDateLabel}, м. {edition.city}).
         </p>
 
         <div className="grid sm:grid-cols-3 gap-4 mb-8">
@@ -166,9 +168,14 @@ function IndividualRunsTable({ category }: { category: AgeCategoryRun }) {
   );
 }
 
-function IndividualRunsTab() {
-  const [categoryId, setCategoryId] = useState(ageCategoryRuns[0].id);
+function IndividualRunsTab({ results }: { results: EditionResults }) {
+  const { ageCategoryRuns } = results;
+  const [categoryId, setCategoryId] = useState(ageCategoryRuns[0]?.id ?? "");
   const category = ageCategoryRuns.find((c) => c.id === categoryId) ?? ageCategoryRuns[0];
+
+  if (!category) {
+    return <p className="text-muted-foreground">Результатів ще немає.</p>;
+  }
 
   return (
     <div className="space-y-6">
@@ -204,10 +211,32 @@ function IndividualRunsTab() {
   );
 }
 
-const ResultsPage = () => {
+export function ResultsRedirect() {
   const [searchParams] = useSearchParams();
+  const latest = latestEditionWithResults();
+  if (!latest) return <Navigate to="/archive" replace />;
+  const tab = searchParams.get("tab");
+  const search = tab ? `?tab=${tab}` : "";
+  return <Navigate to={`/results/${latest.slug}${search}`} replace />;
+}
+
+const ResultsPage = () => {
+  const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const edition = slug ? getEdition(slug) : undefined;
   const initialTab = searchParams.get("tab") === "individual" ? "individual" : "teams";
   const [tab, setTab] = useState<Tab>(initialTab);
+
+  useEffect(() => {
+    if (!edition) return;
+    const previous = document.title;
+    document.title = `Результати — ${editionDisplayName(edition)}`;
+    return () => {
+      document.title = previous;
+    };
+  }, [edition]);
+
+  if (!edition) return <NotFound />;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -215,39 +244,56 @@ const ResultsPage = () => {
       <main className="flex-1 container mx-auto max-w-6xl px-4 pt-28 pb-16">
         <div className="mb-8">
           <h1 className="font-heading font-black text-3xl text-foreground mb-2">
-            Результати <span className="text-accent">FEST</span>
+            Результати <span className="text-accent">{edition.accentWord}</span>
           </h1>
           <p className="text-muted-foreground">
-            Kids Athletics FEST · 24 травня 2026 · м. Дніпро
+            {editionDisplayName(edition)} · {edition.eventDateLabel} · м. {edition.city}
           </p>
         </div>
 
-        <div className="flex gap-2 mb-8">
-          <button
-            type="button"
-            onClick={() => setTab("teams")}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-              tab === "teams"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Командний залік
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("individual")}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-              tab === "individual"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Індивідуальні забіги
-          </button>
-        </div>
+        {!edition.results ? (
+          <div className="bg-card rounded-2xl shadow-md p-8 text-center space-y-4">
+            <p className="text-muted-foreground">
+              Результати з'являться після завершення фестивалю.
+            </p>
+            <Link to="/archive" className="text-primary font-semibold hover:underline">
+              Переглянути архів
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2 mb-8">
+              <button
+                type="button"
+                onClick={() => setTab("teams")}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  tab === "teams"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Командний залік
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("individual")}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  tab === "individual"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Індивідуальні забіги
+              </button>
+            </div>
 
-        {tab === "teams" ? <TeamStandingsTab /> : <IndividualRunsTab />}
+            {tab === "teams" ? (
+              <TeamStandingsTab edition={edition} results={edition.results} />
+            ) : (
+              <IndividualRunsTab results={edition.results} />
+            )}
+          </>
+        )}
       </main>
       <Footer />
     </div>

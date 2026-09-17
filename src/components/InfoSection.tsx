@@ -1,5 +1,6 @@
 import { Zap, Users, Gift, Smile } from "lucide-react";
 import finishLine from "@/assets/finish-line.png";
+import { useEdition } from "@/editions";
 
 const features = [
   { icon: Zap, text: "Динамічні змагання з бігу, стрибків, метання" },
@@ -14,6 +15,8 @@ const goals = [
 ];
 
 const InfoSection = () => {
+  const { edition } = useEdition();
+
   return (
     <section id="info" className="section-padding bg-background">
       <div className="container mx-auto max-w-6xl">
@@ -35,7 +38,7 @@ const InfoSection = () => {
 
             <div className="pt-4 text-center">
               <a
-                href="/reglament_kids_athletics_fest_05-2026.pdf"
+                href={edition.reglamentPdf}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"

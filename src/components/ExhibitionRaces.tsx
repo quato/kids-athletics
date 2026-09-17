@@ -1,17 +1,11 @@
 import { Link } from "react-router-dom";
-import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
-
-const races = [
-  { age: "Інваліди", event: "Біг по прямій 60 м" },
-  { age: "2022 – 2023", event: "Біг на 60 м" },
-  { age: "2020 – 2021", event: "Біг на 100 м (50м гладкий біг + 50м з бар'єрами)" },
-  { age: "2018 – 2019", event: "Біг на 150 м (100м гладкий біг + 50м з перешкодами)" },
-  { age: "2016 – 2017", event: "Біг на 200 м (150м гладкий біг + 50м з перешкодами)" },
-  { age: "2014 – 2015", event: "Біг на 200 м (150м гладкий біг + 50м з перешкодами)" },
-];
+import { resultsPathFor, useEdition } from "@/editions";
+import { FEST_OVER_MESSAGE, isFestOver, isRegistrationOpen } from "@/lib/registration-open";
 
 const ExhibitionRaces = () => {
-  const festOver = isFestOver();
+  const { edition, mode } = useEdition();
+  const archived = mode === "archive" || isFestOver(edition);
+  const registrationOpen = isRegistrationOpen(edition);
 
   return (
     <section className="section-padding bg-muted">
@@ -33,7 +27,7 @@ const ExhibitionRaces = () => {
               </tr>
             </thead>
             <tbody>
-              {races.map((r, i) => (
+              {edition.exhibitionRaces.map((r, i) => (
                 <tr
                   key={i}
                   className={`${i % 2 === 0 ? "bg-card" : "bg-muted"} border-b border-border`}
@@ -48,31 +42,33 @@ const ExhibitionRaces = () => {
 
         <div className="border-l-4 rounded-xl p-4 mb-6 bg-muted border-muted-foreground/30">
           <p className="text-foreground font-semibold text-sm">
-            {festOver ? (
+            {archived ? (
               <>{FEST_OVER_MESSAGE}</>
-            ) : (
+            ) : registrationOpen ? (
               <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
+            ) : (
+              <>Реєстрація на виставкові забіги відкриється <span className="text-primary">{edition.registrationOpenLabel}</span>.</>
             )}
           </p>
-          {festOver ? (
+          {archived ? (
             <Link
-              to="/results?tab=individual"
+              to={resultsPathFor(edition, "individual")}
               className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
             >
               Переглянути результати
             </Link>
-          ) : (
+          ) : registrationOpen ? (
             <Link
               to="/registration"
               className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
             >
               Зареєструватись на виставковий забіг
             </Link>
-          )}
+          ) : null}
         </div>
 
         <p className="text-muted-foreground text-sm">
-          <strong>Виставкові забіги</strong> організовуються з метою створення спортивної події, відкритої і доступної для всіх дітей відповідної вікової категорії (2014–2023 року народження).
+          <strong>Виставкові забіги</strong> організовуються з метою створення спортивної події, відкритої і доступної для всіх дітей відповідної вікової категорії ({edition.birthYears[0]}–{edition.birthYears[1]} року народження).
         </p>
       </div>
     </section>

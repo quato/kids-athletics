@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { isFestOver } from "@/lib/registration-open";
+import { getUpcomingEdition, useEdition } from "@/editions";
+import { isFestOver, isRegistrationOpen } from "@/lib/registration-open";
 
 const hashLinks = [
   { href: "#info", label: "Про фест" },
@@ -13,17 +14,21 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
+  const { edition } = useEdition();
+  const upcoming = getUpcomingEdition();
 
-  // On inner pages (non-homepage) always use solid navbar
-  const isHome = pathname === "/";
-  const solid = !isHome || scrolled;
-  const festOver = isFestOver();
+  const isFestHome = pathname === "/" || pathname.startsWith("/fest/");
+  const solid = !isFestHome || scrolled;
+  const festOver = isFestOver(upcoming);
+  const registrationOpen = isRegistrationOpen(upcoming);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const hashHref = (href: string) => (isFestHome ? href : `/${href}`);
 
   return (
     <nav
@@ -33,15 +38,14 @@ const Navbar = () => {
     >
       <div className="container mx-auto max-w-6xl flex items-center justify-between px-4 py-3">
         <Link to="/" className="font-heading font-black text-xl text-primary">
-          Kids Athletics <span className="text-accent">FEST</span>
+          {edition.shortName} <span className="text-accent">{edition.accentWord}</span>
         </Link>
 
-        {/* Desktop */}
         <div className="hidden md:flex items-center gap-6">
           {hashLinks.map((l) => (
             <a
               key={l.href}
-              href={isHome ? l.href : `/${l.href}`}
+              href={hashHref(l.href)}
               className={`font-medium transition-colors ${
                 solid ? "text-foreground hover:text-primary" : "text-primary-foreground/90 hover:text-accent"
               }`}
@@ -57,9 +61,17 @@ const Navbar = () => {
           >
             Результати
           </Link>
-          {festOver ? (
+          <Link
+            to="/archive"
+            className={`font-medium transition-colors ${
+              solid ? "text-foreground hover:text-primary" : "text-primary-foreground/90 hover:text-accent"
+            }`}
+          >
+            Архів
+          </Link>
+          {festOver || !registrationOpen ? (
             <span className="px-4 py-1.5 rounded-lg bg-muted text-muted-foreground text-sm font-bold cursor-not-allowed">
-              Реєстрація закрита
+              {festOver ? "Реєстрація закрита" : "Реєстрація скоро"}
             </span>
           ) : (
             <Link
@@ -71,7 +83,6 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile toggle */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className={`md:hidden ${solid ? "text-foreground" : "text-primary-foreground"}`}
@@ -80,13 +91,12 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-card/95 backdrop-blur-md border-t border-border px-4 py-4 space-y-3">
           {hashLinks.map((l) => (
             <a
               key={l.href}
-              href={l.href}
+              href={hashHref(l.href)}
               onClick={() => setMenuOpen(false)}
               className="block text-foreground font-medium hover:text-primary transition-colors"
             >
@@ -100,9 +110,16 @@ const Navbar = () => {
           >
             Результати
           </Link>
-          {festOver ? (
+          <Link
+            to="/archive"
+            onClick={() => setMenuOpen(false)}
+            className="block text-foreground font-medium hover:text-primary transition-colors"
+          >
+            Архів
+          </Link>
+          {festOver || !registrationOpen ? (
             <span className="block text-muted-foreground font-medium cursor-not-allowed">
-              Реєстрація закрита
+              {festOver ? "Реєстрація закрита" : "Реєстрація скоро"}
             </span>
           ) : (
             <Link
