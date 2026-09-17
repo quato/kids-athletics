@@ -25,13 +25,16 @@ export function latestEditionWithResults(): Edition | undefined {
   return [...editions].reverse().find((edition) => edition.results != null);
 }
 
+/**
+ * Path to this edition's own results, or null when it has none yet. Never falls
+ * back to another edition: an upcoming fest must not advertise a past one's results.
+ */
 export function resultsPathFor(
   edition: Edition,
   tab?: "teams" | "individual",
-): string {
-  const target = edition.results ? edition : latestEditionWithResults();
-  if (!target) return "/archive";
-  return tab ? `/results/${target.slug}?tab=${tab}` : `/results/${target.slug}`;
+): string | null {
+  if (!edition.results) return null;
+  return tab ? `/results/${edition.slug}?tab=${tab}` : `/results/${edition.slug}`;
 }
 
 export function editionDisplayName(edition: Edition): string {

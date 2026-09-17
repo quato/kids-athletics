@@ -7,6 +7,7 @@ const TeamSection = () => {
   const archived = mode === "archive" || isFestOver(edition);
   const registrationOpen = isRegistrationOpen(edition);
   const teamClosed = edition.teamRegistrationClosed;
+  const teamResultsPath = resultsPathFor(edition, "teams");
 
   return (
     <section id="team" className="section-padding bg-muted">
@@ -63,14 +64,16 @@ const TeamSection = () => {
             )}
           </div>
 
-          <div className="text-center">
-            <Link
-              to={resultsPathFor(edition, "teams")}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
-            >
-              🏆 Результати командної першості
-            </Link>
-          </div>
+          {teamResultsPath && (
+            <div className="text-center">
+              <Link
+                to={teamResultsPath}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
+              >
+                🏆 Результати командної першості
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </section>

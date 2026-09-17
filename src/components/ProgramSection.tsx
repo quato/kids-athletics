@@ -5,6 +5,7 @@ import { isStatsOpen } from "@/lib/registration-open";
 const ProgramSection = () => {
   const { edition, mode } = useEdition();
   const statsOpen = mode === "live" && isStatsOpen(edition);
+  const resultsPath = resultsPathFor(edition);
 
   return (
     <section id="program" className="section-padding bg-background">
@@ -24,12 +25,14 @@ const ProgramSection = () => {
         </div>
 
         <div className="text-center mb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to={resultsPathFor(edition)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
-          >
-            🏆 Результати фесту
-          </Link>
+          {resultsPath && (
+            <Link
+              to={resultsPath}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
+            >
+              🏆 Результати фесту
+            </Link>
+          )}
           {mode === "live" && (
             statsOpen ? (
               <Link

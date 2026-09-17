@@ -6,6 +6,7 @@ import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
 const HowToParticipate = () => {
   const { edition, mode } = useEdition();
   const archived = mode === "archive" || isFestOver(edition);
+  const individualResultsPath = resultsPathFor(edition, "individual");
 
   const steps = [
     {
@@ -72,14 +73,16 @@ const HowToParticipate = () => {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to={resultsPathFor(edition, "individual")}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
-          >
-            🏆 Результати виставкових забігів
-          </Link>
-        </div>
+        {individualResultsPath && (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to={individualResultsPath}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-success text-success-foreground font-bold shadow hover:shadow-lg transition-all hover:scale-105"
+            >
+              🏆 Результати виставкових забігів
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

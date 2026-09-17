@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { getUpcomingEdition, useEdition } from "@/editions";
+import { getUpcomingEdition, resultsPathFor, useEdition } from "@/editions";
 import { isFestOver, isRegistrationOpen } from "@/lib/registration-open";
 
 const hashLinks = [
@@ -21,6 +21,7 @@ const Navbar = () => {
   const solid = !isFestHome || scrolled;
   const festOver = isFestOver(upcoming);
   const registrationOpen = isRegistrationOpen(upcoming);
+  const resultsPath = resultsPathFor(edition);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -53,14 +54,16 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Link
-            to="/results"
-            className={`font-medium transition-colors ${
-              solid ? "text-foreground hover:text-primary" : "text-primary-foreground/90 hover:text-accent"
-            }`}
-          >
-            Результати
-          </Link>
+          {resultsPath && (
+            <Link
+              to={resultsPath}
+              className={`font-medium transition-colors ${
+                solid ? "text-foreground hover:text-primary" : "text-primary-foreground/90 hover:text-accent"
+              }`}
+            >
+              Результати
+            </Link>
+          )}
           <Link
             to="/archive"
             className={`font-medium transition-colors ${
@@ -103,13 +106,15 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Link
-            to="/results"
-            onClick={() => setMenuOpen(false)}
-            className="block text-foreground font-medium hover:text-primary transition-colors"
-          >
-            Результати
-          </Link>
+          {resultsPath && (
+            <Link
+              to={resultsPath}
+              onClick={() => setMenuOpen(false)}
+              className="block text-foreground font-medium hover:text-primary transition-colors"
+            >
+              Результати
+            </Link>
+          )}
           <Link
             to="/archive"
             onClick={() => setMenuOpen(false)}

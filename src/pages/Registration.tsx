@@ -95,6 +95,7 @@ type FormValues = z.infer<typeof schema>;
 const Registration = () => {
   const { edition } = useEdition();
   const festOver = isFestOver(edition);
+  const resultsPath = resultsPathFor(edition);
   const registrationOpen = isRegistrationOpen(edition);
   const [order, setOrder] = useState<RegistrationResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -203,9 +204,9 @@ const Registration = () => {
                 </>
               )}
             </p>
-            {festOver && (
+            {festOver && resultsPath && (
               <Link
-                to={resultsPathFor(edition)}
+                to={resultsPath}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all"
               >
                 🏆 Переглянути результати

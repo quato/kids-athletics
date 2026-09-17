@@ -6,6 +6,7 @@ const ExhibitionRaces = () => {
   const { edition, mode } = useEdition();
   const archived = mode === "archive" || isFestOver(edition);
   const registrationOpen = isRegistrationOpen(edition);
+  const individualResultsPath = resultsPathFor(edition, "individual");
 
   return (
     <section className="section-padding bg-muted">
@@ -50,9 +51,9 @@ const ExhibitionRaces = () => {
               <>Реєстрація на виставкові забіги відкриється <span className="text-primary">{edition.registrationOpenLabel}</span>.</>
             )}
           </p>
-          {archived ? (
+          {archived && individualResultsPath ? (
             <Link
-              to={resultsPathFor(edition, "individual")}
+              to={individualResultsPath}
               className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
             >
               Переглянути результати
