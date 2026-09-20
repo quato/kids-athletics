@@ -94,6 +94,15 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+function placesLabel(count: number): string {
+  const teens = count % 100;
+  if (teens >= 11 && teens <= 14) return "місць";
+  const last = count % 10;
+  if (last === 1) return "місце";
+  if (last >= 2 && last <= 4) return "місця";
+  return "місць";
+}
+
 const Registration = () => {
   const { edition } = useEdition();
   const festOver = isFestOver(edition);
@@ -111,7 +120,12 @@ const Registration = () => {
   const eventsData = edition.teamRegistrationClosed
     ? eventsResponse?.events.filter((e) => !/командн/i.test(e.name))
     : eventsResponse?.events;
-  const capacityReached = eventsResponse ? !eventsResponse.registrationOpen : false;
+  // registrationOpen only speaks for the children's programme; the adult race has
+  // its own places, so the form stays usable while any of the two has room left.
+  const childrenFull = eventsResponse ? !eventsResponse.registrationOpen : false;
+  const adultPlacesLeft = eventsResponse?.adultPlacesLeft ?? 0;
+  const adultsOnly = childrenFull && adultPlacesLeft > 0;
+  const capacityReached = childrenFull && adultPlacesLeft === 0;
   const adultRace = edition.adultRace;
   const latestAdultBirthYear = currentYear - (adultRace?.minAge ?? 18);
   const isAdultEvent = (eventId: number | string | undefined) =>
@@ -215,7 +229,8 @@ const Registration = () => {
           Реєстрація учасників
         </h1>
         <p className="text-muted-foreground mb-8">
-          {editionDisplayName(edition)} — один платіж на всіх дітей.
+          {editionDisplayName(edition)} —{" "}
+          {adultsOnly ? "реєстрація на дорослий забіг." : "один платіж на всіх дітей."}
         </p>
 
         {!registrationOpen ? (
@@ -336,6 +351,20 @@ const Registration = () => {
         ) : (
           /* ── Registration form ── */
           <div className="bg-card rounded-2xl shadow-md p-6">
+            {adultsOnly && (
+              <div className="mb-5 rounded-xl border-l-4 border-primary bg-muted p-4 space-y-1">
+                <p className="font-semibold text-foreground text-sm">
+                  Дитячі місця заповнені — досягнуто ліміт {edition.participantLimit} учасників.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Відкрита реєстрація лише на{" "}
+                  <strong className="text-foreground">{adultRace?.name ?? "дорослий забіг"}</strong>{" "}
+                  для батьків, родичів і гостей фесту — залишилось{" "}
+                  <strong className="text-secondary">{adultPlacesLeft}</strong>{" "}
+                  {placesLabel(adultPlacesLeft)}.
+                </p>
+              </div>
+            )}
             {eventsLoading && (
               <div className="flex items-center justify-center py-8 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />

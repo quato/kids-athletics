@@ -37,6 +37,7 @@ interface OrderRow {
     childName: string;
     birthYear: number;
     eventName: string;
+    audience: string;
     startNumber: number | null;
     isPresent: boolean | null;
   }> | null;
@@ -114,6 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               'childName',   r.child_name,
               'birthYear',   r.birth_year,
               'eventName',   e.name,
+              'audience',    e.audience,
               'startNumber', r.start_number,
               'isPresent',   r.is_present
             ) ORDER BY r.id
@@ -145,8 +147,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "Email",
         "Код платежу",
         "Сума (грн)",
-        "ID Дитини",
-        "Ім'я дитини",
+        "ID Учасника",
+        "Ім'я учасника",
+        "Категорія",
         "Рік народження",
         "Стартовий номер",
         "Присутність",
@@ -177,13 +180,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ];
 
         if (!row.children || row.children.length === 0) {
-          rows.push([...orderData, "", "", "", "", "", ""]);
+          rows.push([...orderData, "", "", "", "", "", "", ""]);
         } else {
           for (const child of row.children) {
             rows.push([
               ...orderData,
               child.id,
               child.childName || "",
+              child.audience === "adults" ? "Дорослий" : "Дитина",
               child.birthYear === 0 ? "Інвалід" : (child.birthYear || ""),
               child.startNumber || "",
               child.isPresent === true ? "Так" : child.isPresent === false ? "Ні" : "",

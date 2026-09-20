@@ -3,6 +3,7 @@ export interface OrderChild {
   childName: string;
   birthYear: number;
   eventName: string;
+  audience: "children" | "adults";
   startNumber: number | null;
   isPresent: boolean | null;
 }

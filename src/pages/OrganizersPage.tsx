@@ -547,7 +547,7 @@ function OrderRow({ order, token, readOnly = false }: { order: Order; token: str
           <td colSpan={9} className="px-4 py-3">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                Діти — стартовий номер та присутність
+                Учасники — стартовий номер та присутність
               </p>
               {order.children.map((c) => (
                 <ChildEditRow
@@ -559,7 +559,7 @@ function OrderRow({ order, token, readOnly = false }: { order: Order; token: str
                 />
               ))}
               {order.children.length === 0 && (
-                <p className="text-sm text-muted-foreground">Немає даних про дітей</p>
+                <p className="text-sm text-muted-foreground">Немає даних про учасників</p>
               )}
               <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground items-center">
                 <span className="flex items-center gap-1">
@@ -1058,7 +1058,7 @@ function TransactionRow({
             <option value="">— Оберіть реєстрацію —</option>
             {pendingOrders.map((o) => (
               <option key={o.id} value={o.id}>
-                #{o.id} {o.parentName} — {o.expectedAmount} грн ({o.children.length} дит.)
+                #{o.id} {o.parentName} — {o.expectedAmount} грн ({o.children.length} уч.)
               </option>
             ))}
           </select>
@@ -1456,10 +1456,17 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
   const registeredAdults = ordersData?.registeredAdults ?? 0;
   const adultLimit = ordersData?.adultLimit ?? 0;
 
-  const totalChildren = orders.reduce((s, o) => s + o.children.length, 0);
+  // Adults run in their own race with their own limit, so they are never counted
+  // as children — they get their own card instead.
+  const isChild = (c: OrderChild) => c.audience !== "adults";
+  const totalChildren = orders.reduce((s, o) => s + o.children.filter(isChild).length, 0);
   const confirmedChildren = orders
     .filter((o) => o.status === "paid")
-    .reduce((s, o) => s + o.children.filter((c) => c.startNumber != null && c.isPresent === true).length, 0);
+    .reduce(
+      (s, o) =>
+        s + o.children.filter((c) => isChild(c) && c.startNumber != null && c.isPresent === true).length,
+      0,
+    );
 
   const filtered = orders.filter((o) => {
     if (filter === "paid") return o.status === "paid";
@@ -1714,7 +1721,7 @@ function Dashboard({ token, onLogout }: { token: string; onLogout: () => void })
                       <th className="px-3 py-3">Дата</th>
                       <th className="px-3 py-3 whitespace-nowrap">Батько/Мати</th>
                       <th className="px-3 py-3">Контакти</th>
-                      <th className="px-3 py-3 text-center">Діти</th>
+                      <th className="px-3 py-3 text-center">Учасники</th>
                       <th className="px-3 py-3">Сума</th>
                       <th className="px-3 py-3">Статус</th>
                       <th className="px-3 py-3 hidden lg:table-cell">Код платежу</th>

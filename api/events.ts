@@ -40,11 +40,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ADULT_LIMIT - parseInt(adultCountResult.rows[0].count, 10),
       0,
     );
+    const registrationOpen = parseInt(countResult.rows[0].count, 10) < CHILDREN_LIMIT;
 
-    // A full adult race disappears from the form; the children's programme is
-    // gated by registrationOpen instead, so its products stay listed either way.
+    // Each audience drops out of the list once its own places are gone, so a full
+    // children's programme still leaves the adult race open for booking.
     const events = eventsResult.rows
-      .filter((row) => row.audience !== "adults" || adultPlacesLeft > 0)
+      .filter((row) => (row.audience === "adults" ? adultPlacesLeft > 0 : registrationOpen))
       .map((row) => ({
         id: row.id,
         name: row.name,
@@ -53,8 +54,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         registrationDeadline: row.registration_deadline,
         audience: row.audience === "adults" ? "adults" : "children",
       }));
-
-    const registrationOpen = parseInt(countResult.rows[0].count, 10) < CHILDREN_LIMIT;
 
     json(res, 200, { events, registrationOpen, adultPlacesLeft });
   } catch (err) {
