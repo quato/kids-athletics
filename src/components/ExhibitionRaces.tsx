@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
 import { resultsPathFor, useEdition } from "@/editions";
 import { FEST_OVER_MESSAGE, isFestOver, isRegistrationOpen } from "@/lib/registration-open";
+import { useRegistrationCapacity } from "@/hooks/use-registration-capacity";
 
 const ExhibitionRaces = () => {
   const { edition, mode } = useEdition();
   const archived = mode === "archive" || isFestOver(edition);
-  const registrationOpen = isRegistrationOpen(edition);
   const individualResultsPath = resultsPathFor(edition, "individual");
+  const { childrenPlacesOpen, adultPlacesLeft } = useRegistrationCapacity();
+  // Capacity is reported for the active fest only, so archived pages ignore it.
+  const childrenFull = !archived && childrenPlacesOpen === false;
+  const registrationOpen = isRegistrationOpen(edition) && !childrenFull;
 
   return (
     <section className="section-padding bg-muted">
@@ -45,12 +49,26 @@ const ExhibitionRaces = () => {
           <p className="text-foreground font-semibold text-sm">
             {archived ? (
               <>{FEST_OVER_MESSAGE}</>
+            ) : childrenFull ? (
+              <>
+                Реєстрацію на виставкові забіги <span className="text-destructive">закрито</span> —
+                всі {edition.participantLimit} місць заповнено.
+              </>
             ) : registrationOpen ? (
               <>Реєстрація на виставкові забіги <span className="text-success">відкрита</span>!</>
             ) : (
               <>Реєстрація на виставкові забіги відкриється <span className="text-primary">{edition.registrationOpenLabel}</span>.</>
             )}
           </p>
+          {childrenFull && edition.adultRace && adultPlacesLeft > 0 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Дорослі ще можуть приєднатися до{" "}
+              <a href="#adults" className="text-secondary font-semibold hover:underline">
+                {edition.adultRace.name}
+              </a>
+              .
+            </p>
+          )}
           {archived && individualResultsPath ? (
             <Link
               to={individualResultsPath}

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { getUpcomingEdition, resultsPathFor, useEdition } from "@/editions";
 import { isFestOver, isRegistrationOpen } from "@/lib/registration-open";
+import { useRegistrationCapacity } from "@/hooks/use-registration-capacity";
 
 const hashLinks = [
   { href: "#info", label: "Про фест" },
@@ -20,7 +21,10 @@ const Navbar = () => {
   const isFestHome = pathname === "/" || pathname.startsWith("/fest/");
   const solid = !isFestHome || scrolled;
   const festOver = isFestOver(upcoming);
-  const registrationOpen = isRegistrationOpen(upcoming);
+  const { childrenPlacesOpen, adultPlacesLeft } = useRegistrationCapacity();
+  // The CTA only dies when neither audience has a place left.
+  const soldOut = childrenPlacesOpen === false && adultPlacesLeft === 0;
+  const registrationOpen = isRegistrationOpen(upcoming) && !soldOut;
   const resultsPath = resultsPathFor(edition);
   const links = edition.adultRace
     ? [...hashLinks, { href: "#adults", label: "Дорослі" }]
@@ -78,7 +82,7 @@ const Navbar = () => {
           </Link>
           {festOver || !registrationOpen ? (
             <span className="px-4 py-1.5 rounded-lg bg-muted text-muted-foreground text-sm font-bold cursor-not-allowed">
-              {festOver ? "Реєстрація закрита" : "Реєстрація скоро"}
+              {festOver || soldOut ? "Реєстрація закрита" : "Реєстрація скоро"}
             </span>
           ) : (
             <Link
@@ -128,7 +132,7 @@ const Navbar = () => {
           </Link>
           {festOver || !registrationOpen ? (
             <span className="block text-muted-foreground font-medium cursor-not-allowed">
-              {festOver ? "Реєстрація закрита" : "Реєстрація скоро"}
+              {festOver || soldOut ? "Реєстрація закрита" : "Реєстрація скоро"}
             </span>
           ) : (
             <Link

@@ -2,11 +2,15 @@ import { PenSquare, CreditCard, Footprints } from "lucide-react";
 import { Link } from "react-router-dom";
 import { resultsPathFor, useEdition } from "@/editions";
 import { FEST_OVER_MESSAGE, isFestOver } from "@/lib/registration-open";
+import { useRegistrationCapacity } from "@/hooks/use-registration-capacity";
 
 const HowToParticipate = () => {
   const { edition, mode } = useEdition();
   const archived = mode === "archive" || isFestOver(edition);
   const individualResultsPath = resultsPathFor(edition, "individual");
+  const { childrenPlacesOpen, adultPlacesLeft } = useRegistrationCapacity();
+  const childrenFull = !archived && childrenPlacesOpen === false;
+  const adultsStillOpen = childrenFull && !!edition.adultRace && adultPlacesLeft > 0;
 
   const steps = [
     {
@@ -47,7 +51,7 @@ const HowToParticipate = () => {
                 <span className="text-2xl font-heading font-black text-secondary">{step.price}</span>
               )}
               {step.action && (
-                archived ? (
+                archived || (childrenFull && !adultsStillOpen) ? (
                   <span className="px-4 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-bold cursor-not-allowed">
                     {step.action.label}
                   </span>
@@ -69,7 +73,13 @@ const HowToParticipate = () => {
           <p className="text-muted-foreground text-sm">
             {archived
               ? FEST_OVER_MESSAGE
-              : `Реєстрація буде відкрита ${edition.registrationDeadlineLabel}, за наявності місць. Загальний ліміт — ${edition.participantLimit} осіб.`}
+              : childrenFull
+                ? `Дитячі місця заповнені — ліміт ${edition.participantLimit} осіб вичерпано.${
+                    adultsStillOpen
+                      ? ` Відкритою залишається реєстрація на ${edition.adultRace!.name} для дорослих.`
+                      : ""
+                  }`
+                : `Реєстрація буде відкрита ${edition.registrationDeadlineLabel}, за наявності місць. Загальний ліміт — ${edition.participantLimit} осіб.`}
           </p>
         </div>
 
