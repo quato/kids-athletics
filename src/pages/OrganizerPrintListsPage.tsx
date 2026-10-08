@@ -35,9 +35,9 @@ function ParticipantsTable({
       <thead>
         <tr>
           <th className="text-center w-12">№</th>
-          <th className="text-left">Фамилия и Имя</th>
-          {showBirthYear && <th className="text-center w-28">Год рождения</th>}
-          <th className="text-center w-28">Стартовый номер</th>
+          <th className="text-left">Прізвище та ім'я</th>
+          {showBirthYear && <th className="text-center w-28">Рік народження</th>}
+          <th className="text-center w-28">Стартовий номер</th>
           <th className="text-left w-32">Примітки</th>
         </tr>
       </thead>
