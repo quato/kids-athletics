@@ -10,6 +10,7 @@ import { editionDisplayName, getEdition, getUpcomingEdition } from "@/editions";
 const STORAGE_KEY = "organizer_token";
 
 const AGE_GROUPS = [
+  { key: "disability", label: "Діти з інвалідністю", event: "Біг по прямій 60 м", showBirthYear: false },
   { key: "2022-2023", label: "2022 – 2023", event: "Біг на 60 м" },
   { key: "2020-2021", label: "2020 – 2021", event: "Біг на 100 м (50м гладкий біг + 50м з бар'єрами)" },
   { key: "2018-2019", label: "2018 – 2019", event: "Біг на 150 м (100м гладкий біг + 50м з перешкодами)" },
@@ -18,7 +19,13 @@ const AGE_GROUPS = [
   { key: "adults", label: "Дорослі (18+)", event: "Steeplechase Mile — миля, 4 кола, 2 перешкоди на колі" },
 ] as const;
 
-function ParticipantsTable({ participants }: { participants: PrintListParticipant[] }) {
+function ParticipantsTable({
+  participants,
+  showBirthYear = true,
+}: {
+  participants: PrintListParticipant[];
+  showBirthYear?: boolean;
+}) {
   if (participants.length === 0) {
     return <p className="text-muted-foreground text-sm py-4">Немає учасників</p>;
   }
@@ -29,7 +36,7 @@ function ParticipantsTable({ participants }: { participants: PrintListParticipan
         <tr>
           <th className="text-center w-12">№</th>
           <th className="text-left">Фамилия и Имя</th>
-          <th className="text-center w-28">Год рождения</th>
+          {showBirthYear && <th className="text-center w-28">Год рождения</th>}
           <th className="text-center w-28">Стартовый номер</th>
           <th className="text-left w-32">Примітки</th>
         </tr>
@@ -39,7 +46,7 @@ function ParticipantsTable({ participants }: { participants: PrintListParticipan
           <tr key={p.startNumber}>
             <td className="text-center">{i + 1}</td>
             <td>{p.childName}</td>
-            <td className="text-center">{p.birthYear}</td>
+            {showBirthYear && <td className="text-center">{p.birthYear > 0 ? p.birthYear : "—"}</td>}
             <td className="text-center font-semibold">{p.startNumber}</td>
             <td></td>
           </tr>
@@ -226,7 +233,10 @@ const OrganizerPrintListsPage = () => {
                     </p>
                   )}
                 </header>
-                <ParticipantsTable participants={participants} />
+                <ParticipantsTable
+                  participants={participants}
+                  showBirthYear={"showBirthYear" in group ? group.showBirthYear : true}
+                />
               </section>
             );
           })}

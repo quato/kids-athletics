@@ -16,7 +16,7 @@ export const october2026: Edition = {
   registrationOpensAt: new Date("2026-09-20T00:00:00+03:00"),
   registrationOpenLabel: "20 вересня 2026 року",
   statsOpensAt: new Date("2026-09-20T00:00:00+03:00"),
-  registrationDeadlineLabel: "до 5 жовтня 2026 року",
+  registrationDeadlineLabel: "до 10 жовтня 2026 року",
   city: "Дніпро",
   venue: "Точна адреса стадіону буде повідомлена зареєстрованим учасникам.",
   participantLimit: 200,

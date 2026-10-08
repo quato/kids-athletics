@@ -73,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         WHERE e.edition = $1
           AND r.is_present = true
           AND r.start_number IS NOT NULL
-          AND r.birth_year > 0
+          AND r.birth_year >= 0
           AND o.status = 'paid'
         ORDER BY age_group, r.start_number ASC
       `, [edition]);

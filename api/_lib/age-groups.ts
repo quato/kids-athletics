@@ -1,5 +1,6 @@
 export const AGE_GROUP_SQL = `
   CASE
+    WHEN r.birth_year = 0 THEN 'disability'
     WHEN r.birth_year BETWEEN 2022 AND 2023 THEN '2022-2023'
     WHEN r.birth_year BETWEEN 2020 AND 2021 THEN '2020-2021'
     WHEN r.birth_year BETWEEN 2018 AND 2019 THEN '2018-2019'
@@ -11,6 +12,7 @@ export const AGE_GROUP_SQL = `
 `;
 
 export const AGE_GROUPS = [
+  { key: "disability", label: "Діти з інвалідністю" },
   { key: "2022-2023", label: "2022 – 2023" },
   { key: "2020-2021", label: "2020 – 2021" },
   { key: "2018-2019", label: "2018 – 2019" },
