@@ -110,6 +110,7 @@ function InlineEditField({
   type = "text",
   className = "",
   readOnly = false,
+  allowEmpty = false,
 }: {
   value: string;
   onSave: (v: string) => Promise<void>;
@@ -117,6 +118,7 @@ function InlineEditField({
   type?: string;
   className?: string;
   readOnly?: boolean;
+  allowEmpty?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -124,7 +126,7 @@ function InlineEditField({
 
   const commit = async () => {
     const trimmed = draft.trim();
-    if (!trimmed || trimmed === value) { setEditing(false); setDraft(value); return; }
+    if (trimmed === value || (!trimmed && !allowEmpty)) { setEditing(false); setDraft(value); return; }
     setSaving(true);
     try {
       await onSave(trimmed);
@@ -248,12 +250,27 @@ function ChildEditRow({
       />
       <InlineEditField
         value={String(child.birthYear || "")}
-        onSave={(v) => persistChild({ birthYear: parseInt(v, 10) })}
+        onSave={(v) => {
+          const year = v ? parseInt(v, 10) : 0;
+          if (v && !Number.isFinite(year)) return Promise.resolve();
+          return persistChild({ birthYear: year });
+        }}
         type="number"
         placeholder="рік"
         className="w-20 text-xs text-muted-foreground"
         readOnly={readOnly}
+        allowEmpty={child.audience !== "adults"}
       />
+      {!readOnly && child.audience !== "adults" && child.birthYear > 0 && (
+        <button
+          type="button"
+          onClick={() => persistChild({ birthYear: 0 })}
+          className="text-muted-foreground hover:text-destructive text-sm leading-none px-0.5"
+          title="Прибрати рік народження"
+        >
+          ×
+        </button>
+      )}
       <span className="text-xs text-muted-foreground">{child.eventName}</span>
 
       <div className="flex items-center gap-1 ml-auto flex-wrap gap-y-1">
