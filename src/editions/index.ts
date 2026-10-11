@@ -33,7 +33,10 @@ export function resultsPathFor(
   edition: Edition,
   tab?: "teams" | "individual",
 ): string | null {
-  if (!edition.results) return null;
+  const results = edition.results;
+  if (!results) return null;
+  if (tab === "teams" && results.teamStandings.length === 0) return null;
+  if (tab === "individual" && results.ageCategoryRuns.length === 0) return null;
   return tab ? `/results/${edition.slug}?tab=${tab}` : `/results/${edition.slug}`;
 }
 

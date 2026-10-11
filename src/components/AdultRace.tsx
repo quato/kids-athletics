@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Flame } from "lucide-react";
-import { useEdition } from "@/editions";
+import { resultsPathFor, useEdition } from "@/editions";
 import { FEST_OVER_MESSAGE, isFestOver, isRegistrationOpen } from "@/lib/registration-open";
 
 const AdultRace = () => {
@@ -10,6 +10,11 @@ const AdultRace = () => {
 
   const archived = mode === "archive" || isFestOver(edition);
   const registrationOpen = isRegistrationOpen(edition);
+  const individualPath = resultsPathFor(edition, "individual");
+  const mileResultsPath =
+    individualPath && edition.results?.ageCategoryRuns.some((run) => run.id === "adults")
+      ? `${individualPath}&category=adults`
+      : null;
 
   return (
     <section id="adults" className="section-padding bg-background">
@@ -60,14 +65,21 @@ const AdultRace = () => {
                 </>
               )}
             </p>
-            {!archived && registrationOpen && (
+            {archived && mileResultsPath ? (
+              <Link
+                to={mileResultsPath}
+                className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
+              >
+                Переглянути результати
+              </Link>
+            ) : !archived && registrationOpen ? (
               <Link
                 to="/registration"
                 className="inline-block mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow hover:shadow-md transition-all hover:scale-105"
               >
                 Зареєструватись на {race.name}
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

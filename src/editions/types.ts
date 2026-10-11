@@ -28,10 +28,26 @@ export type TeamStanding = {
   perDiscipline: Record<string, number>;
 };
 
+/** One row of a discipline protocol. Attempts are present for multi-mark events. */
+export type TeamProtocolRow = {
+  no: number;
+  team: string;
+  place: number;
+  result: string;
+  attempts?: Array<string | null>;
+};
+
+export type TeamProtocol = {
+  id: string;
+  title: string;
+  rows: TeamProtocolRow[];
+};
+
 export type EditionResults = {
   teamDisciplines: ResultTeamDiscipline[];
   teamStandings: TeamStanding[];
   ageCategoryRuns: AgeCategoryRun[];
+  teamProtocols?: TeamProtocol[];
 };
 
 export type TeamProgramDiscipline = {

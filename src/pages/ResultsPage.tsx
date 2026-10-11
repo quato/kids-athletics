@@ -8,7 +8,7 @@ import {
   getEdition,
   latestEditionWithResults,
 } from "@/editions";
-import type { AgeCategoryRun, Edition, EditionResults } from "@/editions/types";
+import type { AgeCategoryRun, Edition, EditionResults, TeamProtocol } from "@/editions/types";
 import NotFound from "./NotFound";
 
 type Tab = "teams" | "individual";
@@ -19,10 +19,78 @@ const medalStyles: Record<number, string> = {
   3: "border-amber-600/60 bg-amber-50 dark:bg-amber-950/20",
 };
 
+function protocolMark(value: string | null | undefined) {
+  if (value == null || value === "-" || value.trim() === "") {
+    return <span className="text-muted-foreground font-normal">—</span>;
+  }
+  return value;
+}
+
+function TeamProtocolTable({ protocol }: { protocol: TeamProtocol }) {
+  const attemptCount = Math.max(0, ...protocol.rows.map((row) => row.attempts?.length ?? 0));
+
+  return (
+    <section id={`protocol-${protocol.id}`} className="scroll-mt-28">
+      <h3 className="font-heading font-bold text-lg text-foreground mb-4">{protocol.title}</h3>
+      <div className="bg-card rounded-2xl shadow overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[640px]">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
+              <th className="px-3 py-3 w-12">№</th>
+              <th className="px-3 py-3 sticky left-0 bg-card z-10">Команда</th>
+              {Array.from({ length: attemptCount }, (_, index) => (
+                <th key={index} className="px-3 py-3 text-center whitespace-nowrap">
+                  {index + 1}
+                </th>
+              ))}
+              <th className="px-3 py-3 text-right whitespace-nowrap">
+                {attemptCount > 0 ? "Заг. рез." : "Результат"}
+              </th>
+              <th className="px-3 py-3 text-center whitespace-nowrap">Місце</th>
+            </tr>
+          </thead>
+          <tbody>
+            {protocol.rows.map((row) => (
+              <tr
+                key={`${protocol.id}-${row.no}`}
+                className={`border-b border-border last:border-0 ${
+                  row.place <= 3 ? "bg-primary/5" : ""
+                }`}
+              >
+                <td className="px-3 py-2.5 text-muted-foreground">{row.no}</td>
+                <td
+                  className={`px-3 py-2.5 font-semibold sticky left-0 z-10 whitespace-nowrap ${
+                    row.place <= 3 ? "bg-primary/5" : "bg-card"
+                  }`}
+                >
+                  {row.team}
+                </td>
+                {Array.from({ length: attemptCount }, (_, index) => (
+                  <td key={index} className="px-3 py-2.5 text-center font-mono">
+                    {protocolMark(row.attempts?.[index])}
+                  </td>
+                ))}
+                <td className="px-3 py-2.5 text-right font-mono font-semibold">{row.result}</td>
+                <td className="px-3 py-2.5 text-center font-bold">{row.place}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function TeamStandingsTab({ edition, results }: { edition: Edition; results: EditionResults }) {
-  const { teamStandings, teamDisciplines } = results;
+  const { teamStandings, teamDisciplines, teamProtocols = [] } = results;
   const sorted = [...teamStandings].sort((a, b) => a.finalPlace - b.finalPlace);
   const topThree = sorted.filter((t) => t.finalPlace <= 3);
+  const protocols = [
+    ...teamDisciplines
+      .map((discipline) => teamProtocols.find((protocol) => protocol.id === discipline.id))
+      .filter((protocol): protocol is TeamProtocol => protocol != null),
+    ...teamProtocols.filter((protocol) => !teamDisciplines.some((discipline) => discipline.id === protocol.id)),
+  ];
 
   return (
     <div className="space-y-10">
@@ -103,7 +171,13 @@ function TeamStandingsTab({ edition, results }: { edition: Edition; results: Edi
                 <th className="px-3 py-3 sticky left-0 bg-card z-10">Команда</th>
                 {teamDisciplines.map((d) => (
                   <th key={d.id} className="px-3 py-3 text-center whitespace-nowrap">
-                    {d.name}
+                    {protocols.some((protocol) => protocol.id === d.id) ? (
+                      <a href={`#protocol-${d.id}`} className="hover:text-primary">
+                        {d.name}
+                      </a>
+                    ) : (
+                      d.name
+                    )}
                   </th>
                 ))}
                 <th className="px-3 py-3 text-center font-bold">Σ</th>
@@ -127,6 +201,30 @@ function TeamStandingsTab({ edition, results }: { edition: Edition; results: Edi
           </table>
         </div>
       </div>
+
+      {protocols.length > 0 && (
+        <div className="space-y-8">
+          <div>
+            <h2 className="font-heading font-bold text-xl text-foreground mb-4">
+              Протоколи за видами
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {protocols.map((protocol) => (
+                <a
+                  key={protocol.id}
+                  href={`#protocol-${protocol.id}`}
+                  className="px-4 py-1.5 rounded-full text-sm font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {protocol.title}
+                </a>
+              ))}
+            </div>
+          </div>
+          {protocols.map((protocol) => (
+            <TeamProtocolTable key={protocol.id} protocol={protocol} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -169,8 +267,13 @@ function IndividualRunsTable({ category }: { category: AgeCategoryRun }) {
 }
 
 function IndividualRunsTab({ results }: { results: EditionResults }) {
+  const [searchParams] = useSearchParams();
   const { ageCategoryRuns } = results;
-  const [categoryId, setCategoryId] = useState(ageCategoryRuns[0]?.id ?? "");
+  const requested = searchParams.get("category");
+  const initialId = ageCategoryRuns.some((cat) => cat.id === requested)
+    ? requested!
+    : (ageCategoryRuns[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState(initialId);
   const category = ageCategoryRuns.find((c) => c.id === categoryId) ?? ageCategoryRuns[0];
 
   if (!category) {
@@ -202,7 +305,7 @@ function IndividualRunsTab({ results }: { results: EditionResults }) {
 
       <div>
         <h2 className="font-heading font-bold text-lg text-foreground mb-1">
-          Вікова категорія {category.label}
+          {category.id === "adults" ? category.label : `Вікова категорія ${category.label}`}
         </h2>
         <p className="text-sm text-muted-foreground mb-4">{category.event}</p>
         <IndividualRunsTable category={category} />
@@ -224,7 +327,10 @@ const ResultsPage = () => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const edition = slug ? getEdition(slug) : undefined;
-  const initialTab = searchParams.get("tab") === "individual" ? "individual" : "teams";
+  const hasTeams = (edition?.results?.teamStandings.length ?? 0) > 0;
+  const hasIndividual = (edition?.results?.ageCategoryRuns.length ?? 0) > 0;
+  const initialTab =
+    searchParams.get("tab") === "individual" && hasIndividual ? "individual" : "teams";
   const [tab, setTab] = useState<Tab>(initialTab);
 
   useEffect(() => {
@@ -262,30 +368,32 @@ const ResultsPage = () => {
           </div>
         ) : (
           <>
-            <div className="flex gap-2 mb-8">
-              <button
-                type="button"
-                onClick={() => setTab("teams")}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                  tab === "teams"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Командний залік
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("individual")}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                  tab === "individual"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Індивідуальні забіги
-              </button>
-            </div>
+            {hasTeams && hasIndividual && (
+              <div className="flex gap-2 mb-8">
+                <button
+                  type="button"
+                  onClick={() => setTab("teams")}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    tab === "teams"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Командний залік
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab("individual")}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    tab === "individual"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Індивідуальні забіги
+                </button>
+              </div>
+            )}
 
             {tab === "teams" ? (
               <TeamStandingsTab edition={edition} results={edition.results} />

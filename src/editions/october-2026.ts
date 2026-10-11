@@ -4,6 +4,7 @@ import iconAgility from "@/assets/icon-agility-2026-10.png";
 import iconZigzag from "@/assets/icon-zigzag-2026-10.png";
 import iconVortex from "@/assets/icon-vortex-2026-10.png";
 import iconEndurance from "@/assets/icon-endurance-2026-10.png";
+import { ageCategoryRuns, teamDisciplines, teamProtocols, teamStandings } from "./results/october-2026";
 import type { Edition } from "./types";
 
 export const october2026: Edition = {
@@ -60,5 +61,5 @@ export const october2026: Edition = {
     minAge: 18,
   },
   reglamentPdf: "/reglament_kids_athletics_october-fest_10-2026.pdf",
-  results: null,
+  results: { teamDisciplines, teamStandings, ageCategoryRuns, teamProtocols },
 };
